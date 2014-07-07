@@ -18,17 +18,25 @@ def lost(**kwargs):
 
 def diff_peakdim(d1, d2, specname, peakid, dimid, log):
     s1, s2 = d1['shift'], d2['shift']
-    if s1 != s2: # TODO floating point equality?
+    mag_diff = abs(s1 - s2)
+    if mag_diff > 0.001: # TODO floating point equality?
         log.append(change(datum='peakdim', field='shift', specname=specname, peakid=peakid, dimid=dimid, old=s1, new=s2))
     r1, r2 = d1['resonance'], d2['resonance']
     if r1 != r2:
         log.append(change(datum='peakdim', field='assignment', specname=specname, peakid=peakid, dimid=dimid, old=r1, new=r2))
 
 def diff_peak(p1, p2, specname, log):
-    for key in ['height', 'note']:
+    # note, ... ?
+    for key in ['note']:
         v1, v2 = p1[key], p2[key]
         if v1 != v2:
             log.append(change(datum='peak', field=key, specname=specname, peakid=p1['id'], old=v1, new=v2))
+    # peak intensity
+    h1, h2 = p1['height']['closest'], p2['height']['closest']
+    mag_diff = abs(h1 - h2)
+    if mag_diff > 0.001: # TODO floating-point equality
+        log.append(change(datum='peak', field='height', specname=specname, peakid=p1['id'], old=h1, new=h2))
+    # dimensions
     for (ix,_) in enumerate(p1['alias']): # just to get the number of dimensions
         d1 = {'shift': p1['frequency'][ix], 'resonance': p1['resonances'][ix]}
         d2 = {'shift': p2['frequency'][ix], 'resonance': p2['resonances'][ix]}
@@ -58,7 +66,7 @@ def diff_spectrum(sp1, sp2, log):
 
 def diff_resonance(r1, r2, rid, log):
     for key in ['atomtype']: # TODO do I care about shift and deviation?
-        if r1[key] != r2[key]:
+        if r1[key] != r2[key]: # TODO floating point equality?
             log.append(change(datum='resonance', field=key, rid=rid, old=r1[key], new=r2[key]))
 
 def diff_group(g1, g2, gid, log):
@@ -97,9 +105,9 @@ def semantic_diff(m1, m2):
     # now continue with groups
     g1, g2 = set(m1['groups'].keys()), set(m2['groups'].keys())
     for gid in (g1 - g2): # lost groups
-        pass # TODO not sure what to do
+        pass # TODO not sure what to do -- is anything necessary?
     for gid in (g2 - g1): # new groups
-        pass
+        log.append(new(datum='model', field='group', gid=gid))
     for gid in g2.intersection(g1): # possibly changed groups
         diff_group(m1['groups'][gid], m2['groups'][gid], gid, log)
     # done
