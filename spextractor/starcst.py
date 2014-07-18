@@ -110,6 +110,8 @@ def build_value(my_string):
     """
     String -> Error StarValue
     """
+    if not isinstance(my_string, basestring):
+        raise TypeError('build_value requires a string -- got %s' % repr(type(my_string)))
     if '\n' not in my_string:
         return DQValue(my_string)
     if my_string.find('\n;') == -1:
@@ -145,7 +147,7 @@ def dump_save(name, save, log):
     log.append('\n')
     for loop in save.loops:
         dump_loop(loop, log)
-    log.append('  save_\n')
+    log.append('  save_\n\n\n')
 
 def dump_data(data, log):
     log.append('data_' + data.name + "\n\n")
