@@ -27,49 +27,106 @@ data_99999999
         8     ASP    .   99999999    1    
         9     ASP    .   99999999    1    
         10    ASP    .   99999999    1    
-        # TODO -- 96 more
+        11    ASP    .   99999999    1
+        12    LYS    .   99999999    1
+        13    GLY    .   99999999    1
+        14    THR    .   99999999    1
+        15    MET    .   99999999    1
+        16    GLU    .   99999999    1
+        17    LEU    .   99999999    1
+        18    GLU    .   99999999    1
+        19    LEU    .   99999999    1
+        20    ARG    .   99999999    1
+        21    PHE    .   99999999    1
+        22    PHE    .   99999999    1
+        23    ALA    .   99999999    1
+        24    THR    .   99999999    1
+        25    PHE    .   99999999    1
+        26    ARG    .   99999999    1
+        27    GLU    .   99999999    1
+        28    VAL    .   99999999    1
+        29    VAL    .   99999999    1
+        30    GLY    .   99999999    1
+        31    GLN    .   99999999    1
+        32    LYS    .   99999999    1
+        33    SER    .   99999999    1
+        34    ILE    .   99999999    1
+        35    TYR    .   99999999    1
+        36    TRP    .   99999999    1
+        37    ARG    .   99999999    1
+        38    VAL    .   99999999    1
+        39    ASP    .   99999999    1
+        40    ASP    .   99999999    1
+        41    ASP    .   99999999    1
+        42    ALA    .   99999999    1
+        43    THR    .   99999999    1
+        44    VAL    .   99999999    1
+        45    GLY    .   99999999    1
+        46    ASP    .   99999999    1
+        47    VAL    .   99999999    1
+        48    LEU    .   99999999    1
+        49    ARG    .   99999999    1
+        50    SER    .   99999999    1
+        51    LEU    .   99999999    1
+        52    GLU    .   99999999    1
+        53    ALA    .   99999999    1
+        54    GLU    .   99999999    1
+        55    TYR    .   99999999    1
+        56    ASP    .   99999999    1
+        57    GLY    .   99999999    1
+        58    LEU    .   99999999    1
+        59    ALA    .   99999999    1
+        60    GLY    .   99999999    1
+        61    ARG    .   99999999    1
+        62    LEU    .   99999999    1
+        63    ILE    .   99999999    1
+        64    GLU    .   99999999    1
+        65    ASP    .   99999999    1
+        66    GLY    .   99999999    1
+        67    GLU    .   99999999    1
+        68    VAL    .   99999999    1
+        69    LYS    .   99999999    1
+        70    PRO    .   99999999    1
+        71    HIS    .   99999999    1
+        72    VAL    .   99999999    1
+        73    ASN    .   99999999    1
+        74    VAL    .   99999999    1
+        75    LEU    .   99999999    1
+        76    LYS    .   99999999    1
+        77    ASN    .   99999999    1
+        78    GLY    .   99999999    1
+        79    ARG    .   99999999    1
+        80    GLU    .   99999999    1
+        81    VAL    .   99999999    1
+        82    VAL    .   99999999    1
+        83    HIS    .   99999999    1
+        84    LEU    .   99999999    1
+        85    ASP    .   99999999    1
+        86    GLY    .   99999999    1
+        87    MET    .   99999999    1
+        88    ALA    .   99999999    1
+        89    THR    .   99999999    1
+        90    ALA    .   99999999    1
+        91    LEU    .   99999999    1
+        92    ASP    .   99999999    1
+        93    ASP    .   99999999    1
+        94    GLY    .   99999999    1
+        95    ASP    .   99999999    1
+        96    ALA    .   99999999    1
+        97    VAL    .   99999999    1
+        98    SER    .   99999999    1
+        99    VAL    .   99999999    1
+        100   PHE    .   99999999    1
+        101   PRO    .   99999999    1
+        102   PRO    .   99999999    1
+        103   VAL    .   99999999    1
+        104   ALA    .   99999999    1
+        105   GLY    .   99999999    1
+        106   GLY    .   99999999    1
       stop_
     
     save_
-    
 
-    save_my_shifts
-    
-        _Assigned_chem_shift_list.Chem_shift_reference_ID   ???
-        _Assigned_chem_shift_list.Entry_ID                  99999999
-        _Assigned_chem_shift_list.ID                        1
-        _Assigned_chem_shift_list.Sample_condition_list_ID  ???
-        _Assigned_chem_shift_list.Sf_category               assigned_chemical_shifts
-        _Assigned_chem_shift_list.Sf_framecode              my_shifts
-        
-        loop_
-            _Ambiguous_atom_chem_shift.Ambiguous_shift_set_ID
-            _Ambiguous_atom_chem_shift.Assigned_chem_shift_list_ID
-            _Ambiguous_atom_chem_shift.Atom_chem_shift_ID
-            _Ambiguous_atom_chem_shift.Entry_ID
-
-            ? ? ? ?
-        stop_
-        
-        loop_
-            _Atom_chem_shift.Assigned_chem_shift_list_ID
-            _Atom_chem_shift.Atom_ID
-            _Atom_chem_shift.Atom_isotope_number
-            _Atom_chem_shift.Atom_type
-            _Atom_chem_shift.Comp_ID
-            _Atom_chem_shift.Comp_index_ID
-            _Atom_chem_shift.Details
-            _Atom_chem_shift.Entity_ID
-            _Atom_chem_shift.Entry_ID
-            _Atom_chem_shift.ID
-            _Atom_chem_shift.Resonance_ID
-            _Atom_chem_shift.Val
-            
-            ? ? ? ? ? ? ? ? ? ? ? ?
-        stop_
-    
-    save_
-    
 
     save_my_resonances
 
@@ -81,26 +138,28 @@ data_99999999
         loop_
             _Resonance.Entry_ID
             _Resonance.ID
-            _Resonance.Name
+            _Resonance.Name  # the relative (to its group) resonance ID in Sparky extension -- NOT the atomtype assignment (including ambiguities etc.)
             _Resonance.Resonance_linker_list_ID
-            _Resonance.Resonance_set_ID
             _Resonance.Spin_system_ID
             _Resonance.Tag_ID
             
-            99999999  1  ? ? ?  1  4
-            99999999  2  ? ? ?  1  4
-            99999999  3  ? ? ?  2  4
-            99999999  4  ? ? ?  2  4
-            99999999  5  ? ? ?  1  4
-            99999999  6  ? ? ?  2  4
+            99999999  1  ?  1  1  4
+            99999999  2  ?  1  1  4
+            99999999  3  ?  1  2  4
+            99999999  4  ?  1  2  4
+            99999999  5  ?  1  1  4
+            99999999  6  ?  1  2  4
+        stop_
+        
+        loop_
+            _Resonance_linker_list.Entry_ID
+            _Resonance_linker_list.ID
+            
+            99999999  1
         stop_
 
         loop_
-            _Resonance_assignment.Assembly_atom_ID
             _Resonance_assignment.Atom_ID
-            _Resonance_assignment.Atom_isotope_number
-            _Resonance_assignment.Atom_set_ID
-            _Resonance_assignment.Atom_type
             _Resonance_assignment.Comp_ID
             _Resonance_assignment.Comp_index_id
             _Resonance_assignment.Entity_assembly_ID
@@ -109,7 +168,7 @@ data_99999999
             _Resonance_assignment.Resonance_linker_list_ID
             _Resonance_assignment.Resonance_set_ID
             
-             ? ? ? ? ? ? ? ? ? ? ? ?
+             ?  ?  ?  ?  ?  99999999  1  ?
         stop_
         
         loop_
@@ -131,8 +190,8 @@ data_99999999
             _Spin_system.Resonance_linker_list_ID
             _Spin_system.Tag_ID
         
-            ?  ?  ?  ?  99999999  1  ?  4
-            ?  ?  ?  ?  99999999  2  ?  4
+            ?  ?  ?  ?  99999999  1  1  4
+            ?  ?  ?  ?  99999999  2  1  4
         stop_
         
         loop_
@@ -327,7 +386,6 @@ data_99999999
         _Annotation_list.Entry_ID               99999999
         _Annotation_list.ID                     1
 
-
         loop_ 
             _Note.ID
             _Note.Text
@@ -337,7 +395,6 @@ data_99999999
 
             1   "abc"  2014-02-23:12:5:23   99999999       1
             2   "def"  2014-02-23:15:23:46  99999999       1
-
         stop_
        
         loop_        # These items are used to link the note to one or more save frames
@@ -351,7 +408,6 @@ data_99999999
      
             1   peak_list   2   peak                          99999999   1
             2   peak_list   2   assigned_peak_chem_shift      99999999   1
-
         stop_
         
         loop_       # These items are used to assign one or more
@@ -367,28 +423,36 @@ data_99999999
             3   "add peak: automated tool"          99999999   1
             4   "gss construction: peak matching"   99999999   1
             5   "remove peak: no matching peaks in other spectrum"   99999999  1
-
         stop_
 
-
-        loop_            # These items define a "Tag"
-            _Tag.ID      # primary key for tags
+        loop_
+            _Tag.ID
             _Tag.Previous_tag_ID
-            _Tag.Previous_value
-            _Tag.Previous_item
             _Tag.Author
             _Tag.Event_time_stamp
             _Tag.Entry_ID
             _Tag.Annotation_list_ID
             _Tag.Detail              # A human-readable message
 
-            1   ?   ?       ?             "mwf"  2014-02-23:15:32:45   99999999   1  "nhsqc: some peak picking"
-            2   1   signal  "_Peak.Type"  "mwf"  2014-04-22:14:57:00   99999999   1  "oops, picked artifact peaks"
-            3   2   ?       ?             "mwf"  2014-04-22:15:00:00   99999999   1  "hnco: pick peaks"
-            4   3   ?       ?             "mwf"  2014-04-22:15:10:00   99999999   1  "build spin systems across nhsqc and hnco"
-            5   4   ?       ?             "mwf"  2014-04-22:15:20:00   99999999   1  "remove unmatched peaks from hnco"
-            
-
+            1   ?   "mwf"  2014-02-23:15:32:45   99999999   1  "nhsqc: some peak picking"
+            2   1   "mwf"  2014-04-22:14:57:00   99999999   1  "oops, picked artifact peaks"
+            3   2   "mwf"  2014-04-22:15:00:00   99999999   1  "hnco: pick peaks"
+            4   3   "mwf"  2014-04-22:15:10:00   99999999   1  "build spin systems across nhsqc and hnco"
+            5   4   "mwf"  2014-04-22:15:20:00   99999999   1  "remove unmatched peaks from hnco"
+        stop_
+        
+        loop_
+          _Tag_diff.ID
+          _Tag_diff.Tag_ID
+          _Tag_diff.Link_Sf_framecode
+          _Tag_diff.Link_Sf_category
+          _Tag_diff.Link_Sf_category_ID
+          _Tag_diff.Link_tag_category
+          _Tag_diff.Entry_ID
+          _Tag_diff.Previous_value
+          _Tag_diff.New_value  # is this necessary?
+          
+          ?  ?  ?  ?  ?  99999999  ?  ?
         stop_
 
     save_
