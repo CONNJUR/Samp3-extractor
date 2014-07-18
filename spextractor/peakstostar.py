@@ -10,7 +10,7 @@ def _row(*vals):
     return map(build_value, vals)
 
 
-def dump_peaks(entry_id, spectrum_id, peaks):
+def extract_peaks(entry_id, spectrum_id, peaks):
     peak_keys = ['Entry_ID', 'ID', 'Spectral_peak_list_ID', 'Type']
     freq_keys = ['Entry_ID', 'Peak_ID', 'Spectral_dim_ID', 'Spectral_peak_list_ID', 'Chem_shift_val']
     height_keys = ['Entry_ID', 'Peak_ID', 'Spectral_peak_list_ID', 'Intensity_val', 'Intensity_val_err', 'Measurement_method']
@@ -37,7 +37,7 @@ def _trans(nucleus):
     return ts[nucleus]
 
 
-def dump_spectral_dimensions(entry_id, spectrum_id, nuclei):
+def extract_spectral_dimensions(entry_id, spectrum_id, nuclei):
     dim_keys = ['Entry_ID', 'ID', 'Spectral_peak_list_ID', 'Atom_isotope_number', 'Atom_type']
     dim_rows = []
     for (ix, n) in enumerate(nuclei, start=1):
@@ -46,7 +46,7 @@ def dump_spectral_dimensions(entry_id, spectrum_id, nuclei):
     return Loop(_pre('Spectral_dim.', dim_keys), dim_rows)
 
 
-def dump_spectrum(spec_id, entry_id, framecode, name, sp):
+def extract_spectrum(spec_id, entry_id, framecode, name, sp):
     datums = {
         'Sf_category'                   : 'spectral_peak_list',
         'Sf_framecode'                  : framecode,
@@ -59,26 +59,34 @@ def dump_spectrum(spec_id, entry_id, framecode, name, sp):
     }
     prefix = 'Spectral_peak_list.'
     pre_datums = dict([(prefix + key, build_value(value)) for (key, value) in datums.items()])
-    loops = dump_peaks(entry_id, spec_id, sp['peaks'])
-    loops.append(dump_spectral_dimensions(entry_id, spec_id, sp['nuclei']))
+    loops = extract_peaks(entry_id, spec_id, sp['peaks'])
+    loops.append(extract_spectral_dimensions(entry_id, spec_id, sp['nuclei']))
     return Save(pre_datums, loops)
 
 
-def dump(entry_id, data):
+def extract(entry_id, data):
     """
     dump object -> NMRStar spectra saveframes
     """
     saves = {}
     for (ix, (name, sp)) in enumerate(data['spectra'].items()):
         code = name + '_peaklist'
-        saves[name] = dump_spectrum(str(ix + 1), entry_id, code, name, sp)
+        saves[name] = extract_spectrum(str(ix + 1), entry_id, code, name, sp)
     return saves
+
+
+def extract_diffs(diffs):
+    """
+    [(Int, String, Diff)] -> ???
+    generate the annotations save frame, including the past history of each peak, resonance, gss????
+    """
+    pass
 
 
 def run():
     import json
     data = json.loads(open('a6.txt', 'r').read())
-    dumped = dump('99999999', data)
-    return starcst.dump(Data('mydata', dumped))
+    extracted = extract('99999999', data)
+    return starcst.dump(Data('mydata', extracted))
 
 print run()
