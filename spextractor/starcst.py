@@ -1,11 +1,14 @@
 
 
-class Base(object):
+class StarBase(object):
     '''
-    Provides default:
+    Provides meaningful defaults for:
      - equality
      - inequality
-     - meaningful string representation 
+     - string representation
+    
+    Subclasses must provide:
+     - toJSONObject :: StarBase -> Dict
     '''
     
     def __eq__(self, other):
@@ -21,7 +24,8 @@ class Base(object):
         return repr(self.toJSONObject())
 
 
-class DQValue(Base):
+
+class DQValue(StarBase):
 
     def __init__(self, value):
         if '\n' in value:
@@ -31,7 +35,9 @@ class DQValue(Base):
     def toJSONObject(self):
         return {'type': 'DQValue', 'value': self.value}
 
-class SCValue(Base):
+
+
+class SCValue(StarBase):
 
     def __init__(self, value):
         if value.find('\n;') >= 0:
@@ -41,16 +47,9 @@ class SCValue(Base):
     def toJSONObject(self):
         return {'type': 'SCValue', 'value': self.value}
 
-def build_value(my_string):
-    if '\n' not in my_string:
-        return SQValue(my_string)
-    if value.find('\n;') == -1:
-        return SCValue(value)
-    raise ValueError("unable to build NMR-Star value from <" + my_string + ">")
-    
 
 
-class Loop(Base):
+class Loop(StarBase):
 
     def __init__(self, keys, rows):
         if not isinstance(keys, list):
@@ -76,7 +75,7 @@ class Loop(Base):
         return dict(zip(self.keys, self.rows[rowIndex]))
 
 
-class Save(Base):
+class Save(StarBase):
 
     def __init__(self, datums, loops):
         if not isinstance(datums, dict):
@@ -92,7 +91,7 @@ class Save(Base):
                 'loops' : [l.toJSONObject() for l in self.loops]}
 
 
-class Data(Base):
+class Data(StarBase):
 
     def __init__(self, name, saves):
         self.name = name
@@ -107,25 +106,37 @@ class Data(Base):
 
 
 
-def dump_value(value, log):
+def build_value(my_string):
+    """
+    String -> Error StarValue
+    """
+    if '\n' not in my_string:
+        return DQValue(my_string)
+    if my_string.find('\n;') == -1:
+        return SCValue(my_string)
+    raise ValueError("unable to build NMR-Star value from <" + my_string + ">")
+    
+
+
+def dump_value(value):
     if isinstance(value, DQValue):
-        log.append('"' + value.value + '"')
+        return '"' + value.value + '"'
     elif isinstance(value, SCValue):
-        log.append('\n;' + value.value + ';\n')
+        return '\n;' + value.value + ';\n'
     else:
         raise ValueError("invalid NMR-Star value -- %s" % repr(value))
 
 def dump_loop(loop, log):
     log.append('    loop_\n')
     for k in loop.keys:
-        log.append('      _' + key + '\n')
+        log.append('      _' + k + '\n')
     log.append('\n')
     for row in loop.rows:
         log.append('      ')
         for val in row:
-            log.append(dump_value(val, log) + ' ')
+            log.append(dump_value(val) + ' ')
         log.append('\n')
-    log.append('    stop_\n')
+    log.append('    stop_\n\n')
 
 def dump_save(name, save, log):
     log.append('  save_' + name + '\n')
@@ -134,6 +145,7 @@ def dump_save(name, save, log):
     log.append('\n')
     for loop in save.loops:
         dump_loop(loop, log)
+    log.append('  save_\n')
 
 def dump_data(data, log):
     log.append('data_' + data.name + "\n\n")
@@ -144,3 +156,16 @@ def dump(data):
     log = []
     dump_data(data, log)
     return ''.join(log)
+
+
+def _row(*vals):
+    return map(build_value, vals)
+
+eg1 = Data('abc', 
+           {'123': Save({'def': build_value('xyz'), 
+                         'ghi': build_value('ab\ncd'),
+                         'qrs': build_value('zomg')}, 
+                        [Loop(['a', 'b'], [_row('1', '2'), _row('3', '4')]),
+                         Loop(['c', 'd'], [_row('hi', 'bye'), _row('xor', 'blar'), _row('xy\nz', 'n1')])])})
+
+my_string = dump(eg1)
