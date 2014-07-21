@@ -66,7 +66,7 @@ def extract_spectrum(spec_id, entry_id, framecode, name, sp):
     return Save(pre_datums, loops)
 
 
-def extract(entry_id, data):
+def extract_spectra(entry_id, data):
     """
     dump object -> NMRStar spectra saveframes
     """
@@ -77,37 +77,42 @@ def extract(entry_id, data):
     return saves
 
 
-def extract_tags(entry_id, annotations):
+def extract_tag_annotations(entry_id, annotations):
+    raise ValueError('unimplemented')
+    anno_list_id = '1' # TODO is this a constant?
+    anno_keys = ['Tag_ID', 'Annotation_code', 'Entry_ID', 'Annotation_list_ID']
+    anno_rows = []
+    for (my_id, reasons) in annotations:
+        for r in reasons:
+            anno_rows.append(_row(my_id, r, entry_id, anno_list_id))
+    return Loop(_pre('Tag_annotations', anno_keys), anno_rows)
+
+
+def extract_tags(entry_id, tags):
     """
-    String -> [(Int, [String])] -> (Loop, Loop)
+    String -> [(String, String)] -> Loop
     """
     anno_list_id = '1' # TODO is this a constant?
-    auth = 'mwf' # TODO ????
+    auth = 'mwf' # TODO constant?
     tag_keys = ['ID', 'Previous_tag_ID', 'Author', 'Event_time_stamp', 'Entry_ID', 'Annotation_list_ID', 'Detail']
-    anno_keys = ['Tag_ID', 'Annotation_code', 'Entry_ID', 'Annotation_list_ID']
-    tag_rows, anno_rows = [], []
-    for (my_id, reasons) in annotations:
+    tag_rows = []
+    for (my_id, message) in tags:
         tag_id = str(my_id)
         prev_id = str(my_id - 1)
-        tag_rows.append(_row(tag_id, prev_id, auth, '?', entry_id, anno_list_id, '?'))
-        for r in reasons:
-            anno_rows.append(_row(tag_id, r, entry_id, anno_list_id))
-    return [
-        Loop(_pre('Tag', tag_keys), tag_rows),
-        Loop(_pre('Tag_annotations', anno_keys), anno_rows)
-    ]
+        tag_rows.append(_row(tag_id, prev_id, auth, '?', entry_id, anno_list_id, message))
+    return Loop(_pre('Tag.', tag_keys), tag_rows)
 
 
-def extract_tag_diffs(enttry_id, diffs):
-    keys = ['ID', 'Tag_ID', 'Link_Sf_framecode', 'Link_Sf_category', 'Link_Sf_category_ID', 'Link_tag_category', 'Entry_ID', 'Previous_value', 'New_value']
+def extract_tag_diffs(entry_id, diffs):
+    keys = ['ID', 'Tag_ID', 'Link_Sf_framecode', 'Link_Sf_category', 'Link_Sf_category_ID', 'Link_tag_category', 'Link_tag_code', 'Entry_ID', 'Previous_value', 'New_value']
     rows = []
     raise ValueError('unimplemented! need to figure out how to link these diffs to save/loop/key/rows in the Star file!')
     return Loop(_pre('Tag_diff.', keys), rows)
 
 
-def extract_diffs(entry_id, annotations, diffs):
+def extract_annotations(entry_id, tags, diffs):
     """
-    [(Int, String, Diff)] -> ???
+    String -> [(Int, String)] -> [(???)] -> SaveFrame
     generate the annotations save frame, including the past history of each peak, resonance, gss????
     """
     datums = {
@@ -117,12 +122,10 @@ def extract_diffs(entry_id, annotations, diffs):
         'ID'            : '1'
     }
     pre_datums = _pre_save('Annotation_list.', datums)
-    tags, tag_annotations = extract_tags(annotations)
-    tag_diffs = extract_tag_diffs(diffs)
     loops = [
-        tags,
-        tag_annotations,
-        tag_diffs,
+        extract_tags(entry_id, tags),
+# TODO        extract_tag_annotations(entry_id, []),
+# TODO        extract_tag_diffs(entry_id, diffs),
         # notes,
         # note_links
     ]
@@ -131,8 +134,21 @@ def extract_diffs(entry_id, annotations, diffs):
 
 def run():
     import json
+    entry_id = '99999999'
+    tags = enumerate([
+            'Sparky setup: contours, align spectra, visible planes, axis order, etc.',
+            'automated NHSQC peak pick',
+            'pick additional NHSQC peaks based on intensity and lineshapes',
+            'identify NHSQC peaks as artifacts based on peak pattern and intensity',
+            'restricted peak pick of HNCACB, CCONH-Tocsy, HNCO based on NHSQC peaks',
+            'initialize GSSs based on NHSQC peaks',
+        ],
+        start=1)
+    diffs = []
     data = json.loads(open('a6.txt', 'r').read())
-    extracted = extract('99999999', data)
+    extracted = extract_spectra(entry_id, data)
+    save_diffs = extract_annotations(entry_id, tags, diffs)
+    extracted[save_diffs.datums['Annotation_list.Sf_framecode'].value] = save_diffs
     return starcst.dump(Data('mydata', extracted))
 
 print run()

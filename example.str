@@ -448,11 +448,12 @@ data_99999999
           _Tag_diff.Link_Sf_category
           _Tag_diff.Link_Sf_category_ID
           _Tag_diff.Link_tag_category
+          _Tag_diff.Link_tag_code
           _Tag_diff.Entry_ID
           _Tag_diff.Previous_value
           _Tag_diff.New_value  # is this necessary?
           
-          ?  ?  ?  ?  ?  99999999  ?  ?
+          ?  ?  ?  ?  ?  ?  99999999  ?  ?
         stop_
 
     save_
