@@ -50,11 +50,13 @@ class Loop(cst.StarBase):
 
 class Data(cst.StarBase):
     """
-    ?
+    1. ?
     """
-    def __init__(self):
-        raise ValueError('unimplemented')
     
+    def __init__(self, name, saves):
+        self.name = name
+        self.saves = saves
+
     def translate(self):
-        raise ValueError('unimplemented')
+        return cst.Data(self.name, dict([(n, s.translate()) for (n, s) in self.saves.items()]))
 

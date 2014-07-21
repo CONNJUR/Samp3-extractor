@@ -48,4 +48,4 @@ def build_final(model):
         - covalent links between resonances (optional)
       - 1 for shifts (optional)
     """
-    
+

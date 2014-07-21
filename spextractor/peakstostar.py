@@ -1,4 +1,3 @@
-from .starcst import build_value, Data, Save, Loop
 from . import starcst
 from . import starast
 
@@ -51,7 +50,7 @@ def extract_spectrum(spec_id, entry_id, framecode, name, sp):
     }
     loops = extract_peaks(entry_id, spec_id, sp['peaks'])
     loops.append(extract_spectral_dimensions(entry_id, spec_id, sp['nuclei']))
-    return starast.Save(framecode, 'spectral_peak_list', 'Spectral_peak_list', datums, loops).translate()
+    return starast.Save(framecode, 'spectral_peak_list', 'Spectral_peak_list', datums, loops)
 
 
 def extract_spectra(entry_id, data):
@@ -113,7 +112,7 @@ def extract_annotations(entry_id, tags, diffs):
         # notes,
         # note_links
     ]
-    return starast.Save('my_annotations', 'annotations', 'Annotation_list', datums, loops).translate()
+    return starast.Save('my_annotations', 'annotations', 'Annotation_list', datums, loops)
 
 
 def run():
@@ -132,8 +131,8 @@ def run():
     data = json.loads(open('a6.txt', 'r').read())
     extracted = extract_spectra(entry_id, data)
     save_diffs = extract_annotations(entry_id, tags, diffs)
-    extracted[save_diffs.datums['Annotation_list.Sf_framecode'].value] = save_diffs
-    return starcst.dump(Data('mydata', extracted))
+    extracted[save_diffs.name] = save_diffs
+    return starcst.dump(starast.Data('mydata', extracted).translate())
 
 print run()
 
