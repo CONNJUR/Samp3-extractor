@@ -126,7 +126,7 @@ def dump_value(value):
     elif isinstance(value, SCValue):
         return '\n;' + value.value + ';\n'
     else:
-        raise ValueError("invalid NMR-Star value -- %s" % repr(value))
+        raise ValueError("invalid NMR-Star value -- %s (%s)" % (repr(value), repr(type(value))))
 
 def dump_loop(loop, log):
     log.append('    loop_\n')

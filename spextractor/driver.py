@@ -22,22 +22,13 @@ def eg3():
             print r
 
 
-annotations = [
-    'Sparky setup: contours, align spectra, visible planes, axis order, etc.',
-    'automated NHSQC peak pick',
-    'pick additional NHSQC peaks based on intensity and lineshapes',
-    'identify NHSQC peaks as artifacts based on peak pattern and intensity',
-    'restricted peak pick of HNCACB, CCONH-Tocsy, HNCO based on NHSQC peaks',
-    'initialize GSSs based on NHSQC peaks',
-]
-
-
-def diff_many(paths):
+def diff_many(high_index):
     changes = []
     base_case = {'spectra': {}, 'groups': {}}
     m1 = base_case
-    for (ix, p) in enumerate(paths):
-        with open(p, 'r') as my_file:
+    for ix in range(1, high_index + 1):
+        path = 'a' + str(ix) + '.txt'
+        with open(path, 'r') as my_file:
             m2 = json.loads(my_file.read())
             changes.append((ix, diff.semantic_diff(m1, m2)))
         m1 = m2
@@ -45,10 +36,13 @@ def diff_many(paths):
 
 
 def eg_many():
-    for (ix, cs) in diff_many(['a1.txt', 'a2.txt', 'a3.txt', 'a4.txt', 'a5.txt', 'a6.txt']):
+    diffs = []
+    for (ix, cs) in diff_many(6):
         for c in cs:
-            print ix, annotations[ix], c
+            diffs.append([ix, c])
+    print json.dumps(diffs)
 
 
 if __name__ == "__main__":
     eg_many()
+
