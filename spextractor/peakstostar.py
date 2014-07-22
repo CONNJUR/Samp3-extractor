@@ -4,19 +4,19 @@ from . import starast
 
 
 def extract_peaks(entry_id, spectrum_id, peaks):
-    peak_keys = ['Entry_ID', 'ID', 'Spectral_peak_list_ID', 'Type']
-    freq_keys = ['Entry_ID', 'Peak_ID', 'Spectral_dim_ID', 'Spectral_peak_list_ID', 'Chem_shift_val']
-    height_keys = ['Entry_ID', 'Peak_ID', 'Spectral_peak_list_ID', 'Intensity_val', 'Intensity_val_err', 'Measurement_method']
+    peak_keys = ['ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Type']
+    height_keys = ['Peak_ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Intensity_val', 'Intensity_val_err', 'Measurement_method']
+    freq_keys = ['Peak_ID', 'Spectral_dim_ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Chem_shift_val']
     peak_rows = []
     freq_rows = []
     height_rows = []
     for pk in peaks:
         pkid = str(pk['id'])
         pktype = 'signal' if pk['note'] == '' else pk['note']
-        peak_rows.append([entry_id, pkid, spectrum_id, pktype])
-        height_rows.append([entry_id, pkid, spectrum_id, str(pk['height']['closest']), '0', 'height'])
+        peak_rows.append([pkid, entry_id, spectrum_id, pktype])
+        height_rows.append([pkid, entry_id, spectrum_id, str(pk['height']['closest']), '0', 'height'])
         for (ix, d) in enumerate(pk['position'], start=1):
-            freq_rows.append([entry_id, pkid, str(ix), spectrum_id, str(d)])
+            freq_rows.append([pkid, str(ix), entry_id, spectrum_id, str(d)])
     return [
         # in order to do peakdim-resonance assignments, need a dict of Sparky-resonance-names to NMRStar-resonance-names
         starast.Loop('Peak', peak_keys, peak_rows),
@@ -31,11 +31,11 @@ def _trans(nucleus):
 
 
 def extract_spectral_dimensions(entry_id, spectrum_id, nuclei):
-    dim_keys = ['Entry_ID', 'ID', 'Spectral_peak_list_ID', 'Atom_isotope_number', 'Atom_type']
+    dim_keys = ['ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Atom_isotope_number', 'Atom_type']
     dim_rows = []
     for (ix, n) in enumerate(nuclei, start=1):
         iso, ntype = _trans(n)
-        dim_rows.append([entry_id, str(ix), spectrum_id, iso, ntype])
+        dim_rows.append([str(ix), entry_id, spectrum_id, iso, ntype])
     return starast.Loop('Spectral_dim', dim_keys, dim_rows)
 
 
@@ -66,11 +66,11 @@ def extract_spectra(entry_id, data):
 
 def extract_tag_annotations(entry_id, annotations):
     anno_list_id = '1' # TODO is this a constant?
-    anno_keys = ['Tag_ID', 'Annotation_code', 'Entry_ID', 'Annotation_list_ID']
+    anno_keys = ['Tag_ID', 'Entry_ID', 'Annotation_list_ID', 'Annotation_code']
     anno_rows = []
     for (my_id, reasons) in annotations:
         for r in reasons:
-            anno_rows.append([my_id, r, entry_id, anno_list_id])
+            anno_rows.append([my_id, entry_id, anno_list_id, r])
     return starast.Loop('Tag_annotations', anno_keys, anno_rows)
 
 
@@ -92,7 +92,23 @@ def extract_tags(entry_id, tags):
 def extract_tag_diffs(entry_id, diffs):
     keys = ['ID', 'Tag_ID', 'Link_Sf_framecode', 'Link_Sf_category', 'Link_Sf_category_ID', 'Link_tag_category', 'Link_tag_code', 'Entry_ID', 'Previous_value', 'New_value']
     rows = []
-    raise ValueError('unimplemented! need to figure out how to link these diffs to save/loop/key/rows in the Star file!')
+    for (ix, (tag_id, d)) in enumerate(diffs, start=1):
+        datum = d['datum']
+        field = d['field']
+        if datum == 'model':
+            if field == 'spectrum':
+                continue # not sure how this maps to NMR-Star
+            elif field == 'group':
+                pass # TODO 
+            rows.append([str(ix), str(tag_id)]) # TODO 
+        elif datum == 'spectrum':
+            pass # TODO 
+        elif datum == 'peak':
+            pass # TODO 
+        else:
+            raise ValueError('unexpected datum in diff: %s' % datum)
+        print d
+        raise ValueError()
     return starast.Loop('Tag_diff', keys, rows)
 
 
@@ -107,8 +123,8 @@ def extract_annotations(entry_id, tags, diffs):
     }
     loops = [
         extract_tags(entry_id, tags),
-        extract_tag_annotations(entry_id, []),
-# TODO        extract_tag_diffs(entry_id, diffs),
+        extract_tag_annotations(entry_id, []), # TODO pass in some annotations
+        extract_tag_diffs(entry_id, diffs),
         # notes,
         # note_links
     ]
@@ -127,12 +143,23 @@ def run():
             'initialize GSSs based on NHSQC peaks',
         ],
         start=1)
-    diffs = []
+    diffs = json.loads(open('diffs2.txt', 'r').read())
     data = json.loads(open('a6.txt', 'r').read())
     extracted = extract_spectra(entry_id, data)
     save_diffs = extract_annotations(entry_id, tags, diffs)
     extracted[save_diffs.name] = save_diffs
     return starcst.dump(starast.Data('mydata', extracted).translate())
 
-print run()
+def run2():
+    import json
+    for ix in range(1, 7):
+        path = 'a' + str(ix) + '.txt'
+        with open(path, 'r') as my_file:
+            with open('b' + str(ix) + '.txt', 'w') as out:
+                data = json.loads(my_file.read())
+                extracted = extract_spectra('99999999', data)
+                data_block = starast.Data('mydata', extracted)
+                out.write(starcst.dump(data_block.translate()))
+#print run()
+run2()
 
