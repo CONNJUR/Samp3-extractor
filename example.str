@@ -152,13 +152,6 @@ data_99999999
         stop_
         
         loop_
-            _Resonance_linker_list.Entry_ID
-            _Resonance_linker_list.ID
-            
-            99999999  1
-        stop_
-
-        loop_
             _Resonance_assignment.Atom_ID
             _Resonance_assignment.Comp_ID
             _Resonance_assignment.Comp_index_id
