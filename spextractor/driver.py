@@ -36,6 +36,9 @@ def diff_many(high_index):
 
 
 def eg_many():
+    """
+    generate a JSON object containing the diffs between a sequence of JSON Sparky-dump files
+    """
     diffs = []
     for (ix, cs) in diff_many(6):
         for c in cs:

@@ -100,6 +100,11 @@ def extract_annotations(entry_id, tags, diffs):
 
 
 def run():
+    """
+    create an NMR-Star file from the:
+     1. diffs
+     2. last JSON snapshot
+    """
     import json
     entry_id = '99999999'
     tags = enumerate([
@@ -119,6 +124,9 @@ def run():
     return starcst.dump(starast.Data('mydata', extracted).translate())
 
 def run2():
+    """
+    create NMR-Star files from each of the JSON files
+    """
     import json
     for ix in range(1, 7):
         path = 'a' + str(ix) + '.txt'
@@ -128,6 +136,6 @@ def run2():
                 extracted = dump2star.extract_spectra('99999999', data)
                 data_block = starast.Data('mydata', extracted)
                 out.write(starcst.dump(data_block.translate()))
-print run()
-#run2()
+#print run()
+run2()
 
