@@ -1,3 +1,7 @@
+from . import dump2star
+from . import staryst
+
+
 """
 1. compare two NMR-Star ASTs, and find the differences in the loop tables
  - new rows
@@ -92,29 +96,56 @@ def diff_data(d1, d2, diff_counter):
       1. "vanilla" NMR-STAR save frames, loops, etc. are changed
       2. the new annotations save frame is *only* augmented
     """
+    changes, new = [], []
     for name in set(d1.saves.keys() + d2.saves.keys()):
-        if name not in d1.saves or name not in d2.saves:
-            raise ValueError('save name %s missing from data block' % name)
         if name == 'my_annotations':
             continue
-        diff_save(d1.saves[name], d2.saves[name])
+        if name not in d1.saves or name not in d2.saves:
+            raise ValueError('save name %s missing from data block' % name)
+        diff_counter, save_changes, save_new = diff_save(d1.saves[name], d2.saves[name], diff_counter)
+        changes.extend(save_changes)
+        new.extend(save_new)
     return (diff_counter, changes, new)
 
 
-'''
-def run2():
+def diff_many(ds, diff_counter=1, tag_counter=1):
+    """
+    let's have the first d be a dummy one -- a bunch of empty loops with no rows in them
+    """
+    changes, new = [], []
+    base = ds[0] # yes, we're assuming that there's always at least 1
+    for d in ds[1:]:
+        diff_counter, data_changes, data_new = diff_data(base, d, diff_counter)
+        changes.append((tag_counter, data_changes)) # if there's no changes -- no problem, still want to increment the tag counter
+        new.append((tag_counter, data_new))
+        tag_counter += 1
+    return (diff_counter, changes, new)
+
+
+
+def run():
     """
     create NMR-Star files from each of the JSON files
     """
     import json
+    datas = []
     for ix in range(1, 7):
         path = 'a' + str(ix) + '.txt'
         with open(path, 'r') as my_file:
-            with open('b' + str(ix) + '.txt', 'w') as out:
+#            with open('b' + str(ix) + '.txt', 'w') as out:
                 data = json.loads(my_file.read())
-                extracted = dump2star.extract_spectra('99999999', data)
-                data_block = starast.Data('mydata', extracted)
-                out.write(starcst.dump(data_block.translate()))
-#print run()
-run2()
-'''
+                extracted_saves = dump2star.extract_spectra('888888', data)
+                data_block = staryst.Data('mydata', extracted_saves)
+                datas.append(data_block)
+                # out.write(starcst.dump(data_block.translate()))
+    (_, changes, new) = diff_many(datas, 1, 1)
+    first = datas[0]
+    with open('my_final', 'w') as out:
+        out.write(starcst.dump(first.to_cst())) # but wait, we're using starYst, not starCst
+    for c in changes:
+        print c
+    for n in new:
+        print n
+
+
+print run()
