@@ -5,39 +5,8 @@
    this may end up being deleted + added rows
 """
 
-def _row_map(rows):
-    """
-    use columns 1 and 2 as primary key
-    """
-    return dict([((r[0], r[1]), r) for r in rows])
 
-
-def diff_save(s1, s2):
-    """
-    first attempt
-    """
-    l = [s1.category, s1.prefix]
-    r = [s2.category, s2.prefix]
-    if l != r:
-        raise ValueError('invalid NMR-Star comparison -- %s and %s' % (l, r))
-    # ignore the rest of the datums
-    for pre in set(s1.loops.keys() + s2.loops.keys()):
-        if pre not in s1.loops:
-            raise ValueError('illegal new loop -- %s' % pre)
-        elif pre not in s2.loops:
-            raise ValueError('illegal disappearing loop -- %s' % pre)
-        else: # loop prefix is in both save frames
-            if l1.keys != l2.keys:
-                raise ValueError('incompatible loop schemas -- prefix %s, %s and %s' % (pre, l1.keys, l2.keys))
-            for pk in set(l1.rows.keys() + l2.rows.keys()):
-                if pk not in l1.rows:
-                    # new row
-                elif pk not in l2.rows:
-                    raise ValueError('cannot lose row -- %s in %s, %s' % (k, l1.prefix, s1.name))
-                else: # possibly changed row
-
-
-def diff_loop(l1, l2, diff_counter):
+def diff_loop(l1, l2, diff_counter, ignore_keys=['Tag_row_ID']):
     """
     merge l2 into l1, modifying l1
     return a list of all changes -- 1 element per changed column 
@@ -51,24 +20,46 @@ def diff_loop(l1, l2, diff_counter):
     if l != r:
         raise ValueError('invalid loop comparison -- %s and %s' % (l, r))
     for (pk, rest) in l2.rows.items():
+        # a new row!
         if pk not in l1.rows:
             l1.add_row(pk, rest)
             diff_id = diff_counter
-            l1.rows[pk][-1] = str(diff_id) # TODO just assume that the last column is `Tag_row_ID`?
+            l1.update_column(pk, 'Tag_row_ID', diff_id)
             diff_counter += 1
             new.append(diff_id)
             continue
-        diff = l1.update_row(pk, rest)
+        # (possibly) modifying an existing row
+        old_diff_id = l1.get_column(pk, 'Tag_row_ID')
+        full_diff = l1.update_row(pk, rest)
+        diff = [r for r in full_diff if r[0] not in ignore_keys]
+        print 'diff: ', diff
+        if diff == []:
+            continue
         diff_id = diff_counter
         diff_counter += 1
-        l1.rows[pk][-1] = str(diff_id) # TODO assumption ... ?
-        changes.append((diff_id, diff)) # TODO don't diff the `Tag_row_ID` columns !!!
+        l1.update_column(pk, 'Tag_row_ID', diff_id)
+        changes.append((old_diff_id, diff_id, diff))
     return (diff_counter, changes, new)
 
+loops_yes = {
+    # Peaks save frame
+    'Peak'                      : ['ID'], 
+    'Peak_char'                 : ['Peak_ID', 'Spectral_dim_ID'],   # frequency
+    'Peak_general_char'         : ['Peak_ID'],                      # height
+    'Assigned_peak_chem_shift'  : ['Peak_ID', 'Spectral_dim_ID'],
+    # Resonances save frame
+    'Resonance'                 : ['ID'],
+#    'Resonance_assignment'     : ['???'],
+    'Spin_system'               : ['ID'],
+    'Spin_system_link'          : ['From_spin_system', 'To_spin_system']
+        # what about GSS typing and GSS-residue?
+}
+loops_no = {
+    'Spectral_dim': ['ID']
+}
 
-def diff_save(s1, s2):
+def diff_save(s1, s2, diff_counter):
     """
-    second attempt
     merge s2 into s1, modifying s1
     """
     l = [s1.category, s1.prefix]
@@ -76,15 +67,22 @@ def diff_save(s1, s2):
     if l != r:
         raise ValueError('invalid save comparison -- %s and %s' % (l, r))
     # ignore the rest of the datums
-    changes = []
+    changes, new = [], []
     for pre in set(s1.loops.keys() + s2.loops.keys()):
         if pre not in s1.loops or pre not in s2.loops:
             raise ValueError('loop name %s missing from save frame' % pre)
-        loop_changes = diff_loop(s1.loops[pre], s2.loops[pre])
-        changes.extend([(,) + lc for lc in loop_changes])
+        if pre in loops_ys:
+            diff_counter, loop_changes, loop_new = diff_loop(s1.loops[pre], s2.loops[pre], diff_counter)
+            changes.extend(loop_changes)
+            new.extend(loop_new)
+        elif pre in loops_no:
+            continue
+        else:
+            raise ValueError('unrecognized loop prefix -- %s' % pre)
+    return (diff_counter, changes, new)
 
 
-def diff_data(d1, d2):
+def diff_data(d1, d2, diff_counter):
     """
     merges d2 into d1, based on matching:
       1. save frame names
@@ -97,5 +95,26 @@ def diff_data(d1, d2):
     for name in set(d1.saves.keys() + d2.saves.keys()):
         if name not in d1.saves or name not in d2.saves:
             raise ValueError('save name %s missing from data block' % name)
+        if name == 'my_annotations':
+            continue
         diff_save(d1.saves[name], d2.saves[name])
+    return (diff_counter, changes, new)
 
+
+'''
+def run2():
+    """
+    create NMR-Star files from each of the JSON files
+    """
+    import json
+    for ix in range(1, 7):
+        path = 'a' + str(ix) + '.txt'
+        with open(path, 'r') as my_file:
+            with open('b' + str(ix) + '.txt', 'w') as out:
+                data = json.loads(my_file.read())
+                extracted = dump2star.extract_spectra('99999999', data)
+                data_block = starast.Data('mydata', extracted)
+                out.write(starcst.dump(data_block.translate()))
+#print run()
+run2()
+'''

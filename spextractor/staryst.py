@@ -1,3 +1,4 @@
+from .starcst import StarBase
 
 
 class Loop(StarBase):
@@ -7,6 +8,8 @@ class Loop(StarBase):
     """
 
     def __init__(self, keycols, restcols, rows):
+        if len(set(keycols + restcols)) != len(keycols) + len(restcols):
+            raise ValueError('duplicate column in Loop')
         self.keycols = keycols
         self.restcols = restcols
         self.rows = {}
@@ -22,9 +25,10 @@ class Loop(StarBase):
     
     def add_row(self, keyvals, restvals):
         self._schema_check(keyvals, restvals)
-        if keyvals in self.rows:
+        pk = tuple(keyvals)
+        if pk in self.rows:
             raise ValueError("can't have duplicate key values -- %s" % str(keyvals))
-        self.rows[keyvals] = restvals
+        self.rows[pk] = list(restvals) # make a copy
     
     def update_row(self, keyvals, restvals):
         """
@@ -32,30 +36,69 @@ class Loop(StarBase):
         set the restvals of a row, returning the changed columns
         """
         self._schema_check(keyvals, restvals)
-        if keyvals not in self.rows:
+        pk = tuple(keyvals)
+        if pk not in self.rows:
             raise ValueError("can't update row -- key not found -- %s" % str(keyvals))
-        # have to save this for later
-        old_restvals = self.rows[keyvals]
-        # next, update the row
-        self.rows[keyvals] = restvals
-        # figure out which columns changed
-        return [(colname, old, new) for (colname, old, new) in zip(old_restvals, restvals, self.restcols) if old != new]
+        row = self.rows[pk]
+        changes = []
+        for (ix, colname) in enumerate(self.restcols, start=0):
+            old, new = row[ix], restvals[ix]
+            if new != old:
+                changes.append((colname, old, new))
+                row[ix] = new
+        return changes
     
-    def add_column(self, name, f):
+    def update_column(self, keyvals, column, value):
         """
-        f generates new values, based on the other values within the row
+        set a non-key column of a row
+        possible errors:
+         1. keys don't match Loop schema (wrong number of keys)
+         2. row not found, based on keyvals
+         3. column not found in restcols
         """
-        restcols.append(name)
+        if len(keyvals) != len(self.keycols):
+            # error 1
+            raise ValueError('number of key values must match number of key columns')
+        pk = tuple(keyvals)
+        # error 2
+        row = self.rows[pk]
+        # error 3
+        index = self.restcols.index(column)
+        row[index] = value
+    
+    def get_column(self, keyvals, column):
+        if len(keyvals) != len(self.keycols):
+            # error 1
+            raise ValueError('number of key values must match number of key columns')
+        pk = tuple(keyvals)
+        # error 2
+        row = self.rows[pk]
+        # error 3
+        index = self.restcols.index(column)
+        return row[index]
+    
+    def add_column(self, name, init_value='.'):
+        """
+        """
+        if name in (self.keycols + self.restcols):
+            raise ValueError('duplicate column name -- %s' % name)
+        self.restcols.append(name)
         for (k, v) in self.rows.items():
-            v.append(f(list(k) + v))
+            v.append(init_value)
     
     def to_cst(self, prefix):
         keys = self.keycols + self.restcols
         idents = [prefix + '.' + k for k in keys]
         rows = []
         for (k, v) in sorted(self.rows.items(), key=lambda x: x[0]):
-            rows.append(map(starcst.build_value(list(k) + v))
+            rows.append(map(starcst.build_value(list(k) + v)))
         return starcst.Loop(idents, rows)
+    
+    def toJSONObject(self):
+        return {'type': 'Loop',
+                'keycols': self.keycols,
+                'restcols': self.restcols,
+                'rows': self.rows}
 
 
 class Save(StarBase):
@@ -90,3 +133,12 @@ class Data(StarBase):
         saves = dict([(name, s.to_cst(name)) for (name, s) in self.saves.items()])
         return starcst.Data(self.name, saves)
 
+
+
+l = Loop(['a', 'b'], ['c', 'd', 'Tag_row_ID'], 
+         [['1', '2', '3', '4', '200'],
+          ['1', '3', '8', '8', '210']])
+l2 = Loop(['a', 'b'], ['c', 'd', 'Tag_row_ID'], 
+          [['1', '2', '3', '5', '.'],
+           ['1', '3', '7', '7', '.'],
+           ['1', '4', '2', '5', '.']])
