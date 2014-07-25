@@ -82,7 +82,7 @@ def diff_spectrum(sp1, sp2, log):
     ids1, ids2 = set(ps1.keys()), set(ps2.keys())
     for pkid in (ids2 - ids1):
         log.append(new(datum='spectrum', field='peak', specname=sp1['name'], peakid=pkid))
-        diff_peak(empty_peak(pkid), sp2['peaks'][pkid - 1], sp1['name'], log)
+#        diff_peak(empty_peak(pkid), sp2['peaks'][pkid - 1], sp1['name'], log)
     for pkid in (ids1 - ids2):
         log.append(error(datum='spectrum', field='peak', specname=sp1['name'], peakid=pkid, message='lost peak'))
     for pkid in ids1.intersection(ids2):
@@ -102,7 +102,7 @@ def diff_group(g1, g2, gid, log):
     rs1, rs2 = set(g1['resonances'].keys()), set(g2['resonances'].keys())
     for rid in (rs2 - rs1): # new resonances
         log.append(new(datum='group', field='resonance', gid=gid, rid=rid))
-        diff_resonance(empty_resonance, g2['resonances'][rid], rid, log)
+#        diff_resonance(empty_resonance, g2['resonances'][rid], rid, log)
     for rid in (rs1 - rs2): # lost resonances
         log.append(lost(datum='group', field='resonance', gid=gid, rid=rid)) # TODO how should I deal with this?
     for rid in rs1.intersection(rs2): # possibly changed resonances
@@ -128,7 +128,7 @@ def semantic_diff(m1, m2):
         log.append(error(datum='model', field='spectrum', specname=specname, message='lost spectrum'))
     for specname in (s2 - s1): # new spectra
         log.append(new(datum='model', field='spectrum', specname=specname))
-        diff_spectrum(empty_spectrum, m2['spectra'][specname], log)
+#        diff_spectrum(empty_spectrum, m2['spectra'][specname], log)
     for specname in s1.intersection(s2): # possibly changed spectra
         diff_spectrum(m1['spectra'][specname], m2['spectra'][specname], log)
     # now continue with groups
@@ -137,7 +137,7 @@ def semantic_diff(m1, m2):
         pass # TODO not sure what to do -- is anything necessary?
     for gid in (g2 - g1): # new groups
         log.append(new(datum='model', field='group', gid=gid))
-        diff_group(empty_group, m2['groups'][gid], gid, log)
+#        diff_group(empty_group, m2['groups'][gid], gid, log)
     for gid in g2.intersection(g1): # possibly changed groups
         diff_group(m1['groups'][gid], m2['groups'][gid], gid, log)
     # done
