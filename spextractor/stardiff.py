@@ -37,7 +37,7 @@ def diff_save(s1, s2):
                 else: # possibly changed row
 
 
-def diff_loop(l1, l2):
+def diff_loop(l1, l2, diff_counter):
     """
     merge l2 into l1, modifying l1
     return a list of all changes -- 1 element per changed column 
@@ -47,15 +47,23 @@ def diff_loop(l1, l2):
     l = [l1.keycols, l1.restcols]
     r = [l2.keycols, l2.restcols]
     changes = []
+    new = []
     if l != r:
         raise ValueError('invalid loop comparison -- %s and %s' % (l, r))
     for (pk, rest) in l2.rows.items():
         if pk not in l1.rows:
-            l1.add_row(pk, rest) # BELAY! we need to mark the row with a tag_id or tag_diff_id
+            l1.add_row(pk, rest)
+            diff_id = diff_counter
+            l1.rows[pk][-1] = str(diff_id) # TODO just assume that the last column is `Tag_row_ID`?
+            diff_counter += 1
+            new.append(diff_id)
             continue
-        diff = l1.update_row(pk, rest) # BELAY! we need to mark the row with a tag_id or tag_diff_id
-        changes.extend(diff)
-    return changes
+        diff = l1.update_row(pk, rest)
+        diff_id = diff_counter
+        diff_counter += 1
+        l1.rows[pk][-1] = str(diff_id) # TODO assumption ... ?
+        changes.append((diff_id, diff)) # TODO don't diff the `Tag_row_ID` columns !!!
+    return (diff_counter, changes, new)
 
 
 def diff_save(s1, s2):
@@ -65,15 +73,15 @@ def diff_save(s1, s2):
     """
     l = [s1.category, s1.prefix]
     r = [s2.category, s2.prefix]
-    changes = []
     if l != r:
         raise ValueError('invalid save comparison -- %s and %s' % (l, r))
     # ignore the rest of the datums
+    changes = []
     for pre in set(s1.loops.keys() + s2.loops.keys()):
         if pre not in s1.loops or pre not in s2.loops:
             raise ValueError('loop name %s missing from save frame' % pre)
         loop_changes = diff_loop(s1.loops[pre], s2.loops[pre])
-        
+        changes.extend([(,) + lc for lc in loop_changes])
 
 
 def diff_data(d1, d2):
