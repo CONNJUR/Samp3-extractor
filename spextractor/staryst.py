@@ -93,7 +93,14 @@ class Loop(StarBase):
         keys = self.keycols + self.restcols
         idents = [prefix + '.' + k for k in keys]
         rows = []
-        for (k, v) in sorted(self.rows.items(), key=lambda x: x[0]):
+        def f(x):
+            key = x[0]
+            fst = key[0]
+            try:
+                return int(fst)
+            except:
+                return fst
+        for (k, v) in sorted(self.rows.items(), key=f):
             rows.append(map(starcst.build_value, list(k) + v))
         return starcst.Loop(idents, rows)
     
