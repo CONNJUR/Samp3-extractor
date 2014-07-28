@@ -2,21 +2,30 @@ from . import starast
 
 
 def extract_peaks(entry_id, spectrum_id, peaks):
-    peak_keys = ['ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Type']
-    height_keys = ['Peak_ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Intensity_val', 'Intensity_val_err', 'Measurement_method']
-    freq_keys = ['Peak_ID', 'Spectral_dim_ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Chem_shift_val']
+    peak_keys = [
+        'ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Type', 'Tag_row_ID']
+    height_keys = [
+        'Peak_ID', 'Entry_ID', 'Spectral_peak_list_ID', 'Intensity_val', 
+        'Intensity_val_err', 'Measurement_method', 'Tag_row_ID']
+    freq_keys = [
+        'Peak_ID', 'Spectral_dim_ID', 'Entry_ID', 'Spectral_peak_list_ID', 
+        'Chem_shift_val', 'Tag_row_ID']
     peak_rows = []
     freq_rows = []
     height_rows = []
+    NULL = '.'
     for pk in peaks:
         pkid = str(pk['id'])
         pktype = 'signal' if pk['note'] == '' else pk['note']
-        peak_rows.append([pkid, entry_id, spectrum_id, pktype])
-        height_rows.append([pkid, entry_id, spectrum_id, str(pk['height']['closest']), '0', 'height'])
+        peak_rows.append([pkid, entry_id, spectrum_id, pktype, NULL])
+        height_rows.append([
+            pkid, entry_id, spectrum_id, str(pk['height']['closest']), 
+            '0', 'height', NULL])
         for (ix, d) in enumerate(pk['position'], start=1):
-            freq_rows.append([pkid, str(ix), entry_id, spectrum_id, str(d)])
+            freq_rows.append([pkid, str(ix), entry_id, spectrum_id, str(d), NULL])
     return [
-        # in order to do peakdim-resonance assignments, need a dict of Sparky-resonance-names to NMRStar-resonance-names
+        # in order to do peakdim-resonance assignments,
+        # need a dict of Sparky-resonance-names to NMRStar-resonance-names
         starast.Loop('Peak', peak_keys, peak_rows),
         starast.Loop('Peak_char', freq_keys, freq_rows),
         starast.Loop('Peak_general_char', height_keys, height_rows)

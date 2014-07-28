@@ -16,14 +16,15 @@ class Loop(StarBase):
         self.restcols = restcols
         self.rows = {}
         num_keys = len(keycols)
-        for r in rows:
-            self.add_row(r[:num_keys], r[num_keys:])
+        for (k, v) in rows.items():
+            self.add_row(k, v)
     
     def _schema_check(self, keyvals, restvals):
         if len(keyvals) != len(self.keycols):
             raise ValueError('number of key values must match number of key columns')
         if len(restvals) != len(self.restcols):
-            raise ValueError('number of rest values must match number of rest columns')
+            args = (restvals, self.restcols)
+            raise ValueError('number of rest values must match rest columns -- %s vs. %s' % args)
     
     def add_row(self, keyvals, restvals):
         self._schema_check(keyvals, restvals)
@@ -46,7 +47,7 @@ class Loop(StarBase):
         for (ix, colname) in enumerate(self.restcols, start=0):
             old, new = row[ix], restvals[ix]
             if new != old:
-                changes.append((colname, old, new))
+                changes.append({'column': colname, 'old_value': old, 'new_value': new})
                 row[ix] = new
         return changes
     
@@ -93,7 +94,7 @@ class Loop(StarBase):
         idents = [prefix + '.' + k for k in keys]
         rows = []
         for (k, v) in sorted(self.rows.items(), key=lambda x: x[0]):
-            rows.append(map(starcst.build_value(list(k) + v)))
+            rows.append(map(starcst.build_value, list(k) + v))
         return starcst.Loop(idents, rows)
     
     def toJSONObject(self):
@@ -156,9 +157,9 @@ class Data(StarBase):
 
 
 l = Loop(['a', 'b'], ['c', 'd', 'Tag_row_ID'], 
-         [['1', '2', '3', '4', '200'],
-          ['1', '3', '8', '8', '210']])
+         {('1', '2'): ['3', '4', '200'],
+          ('1', '3'): ['8', '8', '210']})
 l2 = Loop(['a', 'b'], ['c', 'd', 'Tag_row_ID'], 
-          [['1', '2', '3', '5', '.'],
-           ['1', '3', '7', '7', '.'],
-           ['1', '4', '2', '5', '.']])
+          {('1', '2'): ['3', '5', '.'],
+           ('1', '3'): ['7', '7', '.'],
+           ('1', '4'): ['2', '5', '.']})

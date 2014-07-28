@@ -33,8 +33,8 @@ def build_loop(aloop):
         raise ValueError('expected key columns at beginning of Loop keys -- %s, %s' % (pre, aloop.keys))
     restcols = aloop.keys[n:]
     rows = {}
-    for r in rows:
-        pk, rest = r[:n], r[n:]
+    for r in aloop.rows:
+        pk, rest = tuple(r[:n]), r[n:]
         if pk in rows:
             raise ValueError('duplicate pk in Loop %s -- %s' % (pre, pk))
         rows[pk] = rest
@@ -88,21 +88,22 @@ def diff_loop(l1, l2, diff_counter, ignore_keys=['Tag_row_ID']):
         if pk not in l1.rows:
             l1.add_row(pk, rest)
             diff_id = diff_counter
-            l1.update_column(pk, 'Tag_row_ID', diff_id)
+            l1.update_column(pk, 'Tag_row_ID', str(diff_id))
             diff_counter += 1
             new.append(diff_id)
             continue
         # (possibly) modifying an existing row
         old_diff_id = l1.get_column(pk, 'Tag_row_ID')
         full_diff = l1.update_row(pk, rest)
-        diff = [r for r in full_diff if r[0] not in ignore_keys]
-        print 'diff: ', diff
+        l1.update_column(pk, 'Tag_row_ID', old_diff_id) # HACK don't let Tag_row_ID be changed ... yet!
+        diff = [r for r in full_diff if r['column'] not in ignore_keys]
+#        print 'diff: ', diff
         if diff == []:
             continue
         diff_id = diff_counter
         diff_counter += 1
-        l1.update_column(pk, 'Tag_row_ID', diff_id)
-        changes.append((old_diff_id, diff_id, diff))
+        l1.update_column(pk, 'Tag_row_ID', str(diff_id))
+        changes.append({'old_row_id': old_diff_id, 'new_row_id': str(diff_id), 'diff': diff})
     return (diff_counter, changes, new)
 
 
@@ -156,15 +157,65 @@ def diff_many(ds, diff_counter=1, tag_counter=1):
     """
     let's have the first d be a dummy one -- a bunch of empty loops with no rows in them
     """
+    tag_changes = {}
     changes, new = [], []
     base = ds[0] # yes, we're assuming that there's always at least 1
     for d in ds[1:]:
+        diffs = {'new': [], 'changes': []}
+        tag_changes[tag_counter] = diffs
         diff_counter, data_changes, data_new = diff_data(base, d, diff_counter)
-        changes.append((tag_counter, data_changes)) # if there's no changes -- no problem, still want to increment the tag counter
-        new.append((tag_counter, data_new))
+        diffs['changes'].extend(data_changes)
+        diffs['new'].extend(data_new)
+         # if there's no changes -- no problem, still want to increment the tag counter
         tag_counter += 1
-    return (diff_counter, changes, new)
+    return {
+        'diff_counter'  : diff_counter  ,
+        'changes'       : tag_changes
+    }
 
+
+def annotations(ds):
+    diff = diff_many(ds)
+    first = ds[0]
+    tags = staryst.Loop(['ID'], 
+                        ['Previous_tag_ID', 'Author', 'Entry_ID', 'Annotation_list_ID', 'Detail'],
+                        {})
+    tag_rows = staryst.Loop(['ID'], 
+                            ['Previous_tag_row_ID', 'Tag_ID', 'Entry_ID', 'Annotation_list_ID'],
+                            {})
+    tag_diffs = staryst.Loop(['ID'],
+                             ['Tag_row_ID', 'Entry_ID', 'Annotation_list_ID', 'Column_name', 'Previous_value'],
+                             {})
+    sf_id= '1'
+    datums = {
+        'Entry_ID': '888888',
+        'ID': sf_id
+    }
+    loops = {
+        'Tag'       : tags      ,
+        'Tag_row'   : tag_rows  ,
+        'Tag_diff'  : tag_diffs
+    }
+    first.saves['my_annotations'] = staryst.Save('annotations', 'Annotation_list', datums, loops)
+    tag_diff_id = 1
+#    print diff['changes']
+#    raise 1
+    for (tag_id, chs) in sorted(diff['changes'].items(), key=lambda x: int(x[0])):
+        tag = str(tag_id)
+        tags.add_row([tag], [str(tag_id - 1), '.', '888888', sf_id, '.'])
+        for c in chs['changes']:
+            old, new = c['old_row_id'], c['new_row_id']
+            tag_rows.add_row([new], [old, tag, '888888', sf_id])
+            for d in c['diff']:
+                tag_diffs.add_row([str(tag_diff_id)], 
+                                  [new, '888888', sf_id, d['column'], d['old_value']])
+                tag_diff_id += 1
+        print 'hi -- ', chs['new']
+        for n in chs['new']:
+            tag_rows.add_row([str(n)], ['.', tag, '888888', sf_id])
+            tag_diffs.add_row([str(tag_diff_id)], [str(n), '888888', sf_id, '.', '.'])
+            tag_diff_id += 1
+    return first
 
 
 def run():
@@ -173,15 +224,16 @@ def run():
     """
     import json
     datas = []
-    for ix in range(1, 7):
-        path = 'a' + str(ix) + '.txt'
+    paths = ['a' + str(ix) + '.txt' for ix in range(1,7)]
+
+    for path in paths:
         with open(path, 'r') as my_file:
-#            with open('b' + str(ix) + '.txt', 'w') as out:
-                data = json.loads(my_file.read())
-                extracted_saves = dump2star.extract_spectra('888888', data)
-                data_block = starast.Data('mydata', extracted_saves)
-                datas.append(from_ast(data_block))
-                # out.write(starcst.dump(data_block.translate()))
+            data = json.loads(my_file.read())
+            extracted_saves = dump2star.extract_spectra('888888', data)
+            data_block = starast.Data('mydata', extracted_saves)
+            yst = from_ast(data_block)
+            datas.append(yst)
+
     for d in datas:
         print d, '\n\n\n'
     (_, changes, new) = diff_many(datas, 1, 1)
@@ -194,4 +246,34 @@ def run():
         print n
 
 
-print run()
+# print run()
+
+
+y0 = staryst.Data('abc',
+                  {'def': staryst.Save('456', '789', {},
+                                       {'Spin_system': staryst.Loop(['ID'], 
+                                                                    ['b', 'c', 'Tag_row_ID'], {})})})
+eg_loops = [
+    starast.Loop('Spin_system', ['ID', 'b', 'c', 'Tag_row_ID'],
+                 [['1', '2', '3', '.'], ['2', '20', '44', '.'], ['3', '18', '27', '.']])
+]
+eg1 = starast.Data('abc',
+                   {'def': starast.Save('123', '456', '789', {}, eg_loops)})
+y1 = from_ast(eg1)
+# print from_ast(eg1)
+y2 = staryst.Data('abc',
+             {'def': staryst.Save('456', '789', {},
+                                  {'Spin_system': staryst.Loop(['ID'], ['b', 'c', 'Tag_row_ID'], 
+                                                               {('1',): ['2', '3', '?'], 
+                                                                ('2',): ['20', '45', '.'],
+                                                                ('3',): ['19', '28', '.'],
+                                                                ('4',): ['77', '7', '?']})})})
+
+#print diff_data(y0, y2, 3)
+#out = diff_many([y0, y1, y2])
+out = annotations([y0, y1, y2])
+#import json
+#print json.dumps(out, indent=2), '\n\n'
+# print out
+print starcst.dump(y0.to_cst())
+

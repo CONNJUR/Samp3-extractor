@@ -111,7 +111,8 @@ def build_value(my_string):
     String -> Error StarValue
     """
     if not isinstance(my_string, basestring):
-        raise TypeError('build_value requires a string -- got %s' % repr(type(my_string)))
+        args = (repr(type(my_string)), my_string)
+        raise TypeError('build_value requires a string -- got %s (%s)' % args)
     if '\n' not in my_string:
         return DQValue(my_string)
     if my_string.find('\n;') == -1:

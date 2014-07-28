@@ -16,6 +16,14 @@ class Loop(cst.StarBase):
         keys = [self.prefix + '.' + k for k in self.keys]
         rows = [map(cst.build_value, row) for row in self.rows]
         return cst.Loop(keys, rows)
+    
+    def toJSONObject(self):
+        return {
+            'type': 'ALoop',
+            'prefix': self.prefix,
+            'keys': self.keys,
+            'rows': self.rows
+        }
 
 
 class Save(cst.StarBase):
@@ -46,6 +54,16 @@ class Save(cst.StarBase):
         loops = [l.translate() for l in self.loops]
         # TODO what about the name (i.e. save_blahblah?)
         return cst.Save(datums, loops)
+    
+    def toJSONObject(self):
+        return {
+            'type': 'ASave',
+            'name': self.name,
+            'category': self.category,
+            'prefix': self.prefix,
+            'datums': self.datums,
+            'loops': [l.toJSONObject() for l in self.loops]
+        }
 
 
 class Data(cst.StarBase):
@@ -59,4 +77,10 @@ class Data(cst.StarBase):
 
     def translate(self):
         return cst.Data(self.name, dict([(n, s.translate()) for (n, s) in self.saves.items()]))
-
+    
+    def toJSONObject(self):
+        return {
+            'type': 'AData',
+            'name': self.name,
+            'saves': dict([(k, v.toJSONObject()) for (k, v) in self.saves.items()])
+        }
