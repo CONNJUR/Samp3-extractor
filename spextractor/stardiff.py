@@ -1,5 +1,63 @@
 from . import dump2star
 from . import staryst
+from . import starast
+
+
+loop_keys = {
+    # Peaks save frame
+    'Peak'                      : ['ID'], 
+    'Peak_char'                 : ['Peak_ID', 'Spectral_dim_ID'],   # frequency
+    'Peak_general_char'         : ['Peak_ID'],                      # height
+    'Assigned_peak_chem_shift'  : ['Peak_ID', 'Spectral_dim_ID'],
+    # Resonances save frame
+    'Resonance'                 : ['ID'],
+#    'Resonance_assignment'     : ['???'],
+    'Spin_system'               : ['ID'],
+    'Spin_system_link'          : ['From_spin_system', 'To_spin_system']
+    # what about GSS typing and GSS-residue?
+    'Spectral_dim': ['ID']
+}
+
+loops_yes = set(['Peak', 'Peak_char', 'Peak_general_char', 'Assigned_peak_chem_shift',
+    'Resonance', 'Spin_system', Spin_system_link'])
+loops_no = set(['Spectral_dim'])
+
+
+def build_loop(aloop):
+    pre = aloop.pre
+    keys = loop_keys(pre)
+    n = len(keys)
+    if keys != aloop.keys[:n]:
+        raise ValueError('expected key columns at beginning of Loop keys -- %s, %s' % (pre, aloop.keys))
+    restcols = aloop.keys[n:]
+    rows = {}
+    for r in rows:
+        pk, rest = r[:n], r[n:]
+        if pk in rows:
+            raise ValueError('duplicate pk in Loop %s -- %s' % (pre, pk))
+        rows[pk] = rest
+    return staryst.Loop(keys, restcols, rows)
+
+
+def build_save(asave):
+    loops = {}
+    for l in asave.loops:
+        if l.prefix in loops:
+            raise ValueError('duplicate loop prefix -- %s' % l.prefix)
+        loops[l.prefix] = build_loop(l)
+    return staryst.Save(asave.category, asave.prefix, asave.datums, loops)    
+
+
+def build_data(adata):
+    saves = dict([(name, build_save(asave)) for (name, asave) in adata.saves.items()])
+    return staryst.Data(adata.name, saves)
+
+
+def from_ast(adata):
+    """
+    convert a STAR AST to an NMRSTAR AST -- implemented in the staryst module
+    """
+    return build_data(adata)
 
 
 """
@@ -45,22 +103,6 @@ def diff_loop(l1, l2, diff_counter, ignore_keys=['Tag_row_ID']):
         changes.append((old_diff_id, diff_id, diff))
     return (diff_counter, changes, new)
 
-loops_yes = {
-    # Peaks save frame
-    'Peak'                      : ['ID'], 
-    'Peak_char'                 : ['Peak_ID', 'Spectral_dim_ID'],   # frequency
-    'Peak_general_char'         : ['Peak_ID'],                      # height
-    'Assigned_peak_chem_shift'  : ['Peak_ID', 'Spectral_dim_ID'],
-    # Resonances save frame
-    'Resonance'                 : ['ID'],
-#    'Resonance_assignment'     : ['???'],
-    'Spin_system'               : ['ID'],
-    'Spin_system_link'          : ['From_spin_system', 'To_spin_system']
-        # what about GSS typing and GSS-residue?
-}
-loops_no = {
-    'Spectral_dim': ['ID']
-}
 
 def diff_save(s1, s2, diff_counter):
     """
@@ -75,7 +117,7 @@ def diff_save(s1, s2, diff_counter):
     for pre in set(s1.loops.keys() + s2.loops.keys()):
         if pre not in s1.loops or pre not in s2.loops:
             raise ValueError('loop name %s missing from save frame' % pre)
-        if pre in loops_ys:
+        if pre in loops_yes:
             diff_counter, loop_changes, loop_new = diff_loop(s1.loops[pre], s2.loops[pre], diff_counter)
             changes.extend(loop_changes)
             new.extend(loop_new)
@@ -135,8 +177,8 @@ def run():
 #            with open('b' + str(ix) + '.txt', 'w') as out:
                 data = json.loads(my_file.read())
                 extracted_saves = dump2star.extract_spectra('888888', data)
-                data_block = staryst.Data('mydata', extracted_saves)
-                datas.append(data_block)
+                data_block = starast.Data('mydata', extracted_saves)
+                datas.append(from_ast(data_block))
                 # out.write(starcst.dump(data_block.translate()))
     (_, changes, new) = diff_many(datas, 1, 1)
     first = datas[0]
