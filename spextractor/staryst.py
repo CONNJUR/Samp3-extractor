@@ -1,4 +1,6 @@
 from .starcst import StarBase
+from . import starcst
+
 
 
 class Loop(StarBase):
@@ -95,10 +97,12 @@ class Loop(StarBase):
         return starcst.Loop(idents, rows)
     
     def toJSONObject(self):
-        return {'type': 'Loop',
-                'keycols': self.keycols,
-                'restcols': self.restcols,
-                'rows': self.rows}
+        return {
+            'type'      : 'Loop',
+            'keycols'   : self.keycols,
+            'restcols'  : self.restcols,
+            'rows'      : self.rows
+        }
 
 
 class Save(StarBase):
@@ -121,6 +125,15 @@ class Save(StarBase):
         pre_datums = dict([(self.prefix + '.' + k, starcst.build_value(v)) for (k, v) in datums.items()])
         loops = [loop.to_cst(loopname) for (loopname, loop) in self.loops.items()]
         return starcst.Save(pre_datums, loops)
+    
+    def toJSONObject(self):
+        return {
+            'type'      : 'Save',
+            'category'  : self.category,
+            'prefix'    : self.prefix,
+            'datums'    : self.datums,
+            'loops'     : dict([(k, v.toJSONObject()) for (k,v) in self.loops.items()])
+        }
 
 
 class Data(StarBase):
@@ -132,6 +145,13 @@ class Data(StarBase):
     def to_cst(self):
         saves = dict([(name, s.to_cst(name)) for (name, s) in self.saves.items()])
         return starcst.Data(self.name, saves)
+    
+    def toJSONObject(self):
+        return {
+            'type'  : 'Data',
+            'name'  : self.name,
+            'saves' : dict([(k, v.toJSONObject()) for (k,v) in self.saves.items()])
+        }
 
 
 

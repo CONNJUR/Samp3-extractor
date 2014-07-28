@@ -1,31 +1,33 @@
 from . import dump2star
 from . import staryst
 from . import starast
+from . import starcst
 
 
 loop_keys = {
     # Peaks save frame
-    'Peak'                      : ['ID'], 
+    'Peak'                      : ['ID']                        ,
     'Peak_char'                 : ['Peak_ID', 'Spectral_dim_ID'],   # frequency
-    'Peak_general_char'         : ['Peak_ID'],                      # height
+    'Peak_general_char'         : ['Peak_ID']                   ,   # height
     'Assigned_peak_chem_shift'  : ['Peak_ID', 'Spectral_dim_ID'],
     # Resonances save frame
-    'Resonance'                 : ['ID'],
-#    'Resonance_assignment'     : ['???'],
-    'Spin_system'               : ['ID'],
-    'Spin_system_link'          : ['From_spin_system', 'To_spin_system']
-    # what about GSS typing and GSS-residue?
+    'Resonance'                 : ['ID']                        ,
+    #'Resonance_assignment'     : ['???']                       ,
+    'Spin_system'               : ['ID']                        ,
+    'Spin_system_link'          : ['From_spin_system', 'To_spin_system'],
     'Spectral_dim': ['ID']
+    # TODO what about GSS typing and GSS-residue?
 }
 
-loops_yes = set(['Peak', 'Peak_char', 'Peak_general_char', 'Assigned_peak_chem_shift',
-    'Resonance', 'Spin_system', Spin_system_link'])
+loops_yes = set([
+    'Peak', 'Peak_char', 'Peak_general_char', 'Assigned_peak_chem_shift',
+    'Resonance', 'Spin_system', 'Spin_system_link'])
 loops_no = set(['Spectral_dim'])
 
 
 def build_loop(aloop):
-    pre = aloop.pre
-    keys = loop_keys(pre)
+    pre = aloop.prefix
+    keys = loop_keys[pre]
     n = len(keys)
     if keys != aloop.keys[:n]:
         raise ValueError('expected key columns at beginning of Loop keys -- %s, %s' % (pre, aloop.keys))
@@ -180,10 +182,12 @@ def run():
                 data_block = starast.Data('mydata', extracted_saves)
                 datas.append(from_ast(data_block))
                 # out.write(starcst.dump(data_block.translate()))
+    for d in datas:
+        print d, '\n\n\n'
     (_, changes, new) = diff_many(datas, 1, 1)
     first = datas[0]
     with open('my_final', 'w') as out:
-        out.write(starcst.dump(first.to_cst())) # but wait, we're using starYst, not starCst
+        out.write(starcst.dump(first.to_cst()))
     for c in changes:
         print c
     for n in new:
