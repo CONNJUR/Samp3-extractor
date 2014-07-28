@@ -1,6 +1,23 @@
 from . import starcst as cst
 
 
+class Loop(cst.StarBase):
+    """
+    1. prefix of keys
+    2. convert Strings to NMR-Star values
+    """
+    
+    def __init__(self, prefix, keys, rows):
+        self.prefix = prefix
+        self.keys = keys
+        self.rows = rows
+    
+    def translate(self):
+        keys = [self.prefix + '.' + k for k in self.keys]
+        rows = [map(cst.build_value, row) for row in self.rows]
+        return cst.Loop(keys, rows)
+
+
 class Save(cst.StarBase):
     """
     1. Sf_framecode === name of save frame
@@ -29,23 +46,6 @@ class Save(cst.StarBase):
         loops = [l.translate() for l in self.loops]
         # TODO what about the name (i.e. save_blahblah?)
         return cst.Save(datums, loops)
-
-
-class Loop(cst.StarBase):
-    """
-    1. prefix of keys
-    2. convert Strings to NMR-Star values
-    """
-    
-    def __init__(self, prefix, keys, rows):
-        self.prefix = prefix
-        self.keys = keys
-        self.rows = rows
-    
-    def translate(self):
-        keys = [self.prefix + '.' + k for k in self.keys]
-        rows = [map(cst.build_value, row) for row in self.rows]
-        return cst.Loop(keys, rows)
 
 
 class Data(cst.StarBase):
