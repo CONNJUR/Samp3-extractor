@@ -175,7 +175,8 @@ def diff_many(ds, diff_counter=1, tag_counter=1):
 
 
 def annotations(ds):
-    diff = diff_many(ds)
+    second_tag_id = 1
+    diff = diff_many(ds, tag_counter=second_tag_id)
     first = ds[0]
     tags = staryst.Loop(['ID'], 
                         ['Previous_tag_ID', 'Author', 'Entry_ID', 'Annotation_list_ID', 'Detail'],
@@ -197,9 +198,8 @@ def annotations(ds):
         'Tag_diff'  : tag_diffs
     }
     first.saves['my_annotations'] = staryst.Save('annotations', 'Annotation_list', datums, loops)
+    tags.add_row([str(second_tag_id - 1)], ['.', '.', '888888', sf_id, '.'])
     tag_diff_id = 1
-#    print diff['changes']
-#    raise 1
     for (tag_id, chs) in sorted(diff['changes'].items(), key=lambda x: int(x[0])):
         tag = str(tag_id)
         tags.add_row([tag], [str(tag_id - 1), '.', '888888', sf_id, '.'])
@@ -210,7 +210,6 @@ def annotations(ds):
                 tag_diffs.add_row([str(tag_diff_id)], 
                                   [new, '888888', sf_id, d['column'], d['old_value']])
                 tag_diff_id += 1
-        print 'hi -- ', chs['new']
         for n in chs['new']:
             tag_rows.add_row([str(n)], ['.', tag, '888888', sf_id])
             tag_diffs.add_row([str(tag_diff_id)], [str(n), '888888', sf_id, '.', '.'])
@@ -224,56 +223,56 @@ def run():
     """
     import json
     datas = []
-    paths = ['a' + str(ix) + '.txt' for ix in range(1,7)]
+    paths = ['a' + str(ix) + '.txt' for ix in range(1,5)]
 
     for path in paths:
         with open(path, 'r') as my_file:
             data = json.loads(my_file.read())
             extracted_saves = dump2star.extract_spectra('888888', data)
-            data_block = starast.Data('mydata', extracted_saves)
+            data_block = starast.Data('888888', extracted_saves)
             yst = from_ast(data_block)
             datas.append(yst)
 
-    for d in datas:
-        print d, '\n\n\n'
-    (_, changes, new) = diff_many(datas, 1, 1)
-    first = datas[0]
+    done = annotations(datas)
     with open('my_final', 'w') as out:
-        out.write(starcst.dump(first.to_cst()))
-    for c in changes:
-        print c
-    for n in new:
-        print n
+        out.write(starcst.dump(done.to_cst()))
+    return done
+#    for d in datas:
+#        print d, '\n\n\n'
+#    (_, changes, new) = diff_many(datas, 1, 1)
+#    first = datas[0]
+#    with open('my_final', 'w') as out:
+#        out.write(starcst.dump(first.to_cst()))
+#    for c in changes:
+#        print c
+#    for n in new:
+#        print n
 
 
-# print run()
+out = run()
 
 
-y0 = staryst.Data('abc',
-                  {'def': staryst.Save('456', '789', {},
-                                       {'Spin_system': staryst.Loop(['ID'], 
-                                                                    ['b', 'c', 'Tag_row_ID'], {})})})
-eg_loops = [
-    starast.Loop('Spin_system', ['ID', 'b', 'c', 'Tag_row_ID'],
-                 [['1', '2', '3', '.'], ['2', '20', '44', '.'], ['3', '18', '27', '.']])
-]
-eg1 = starast.Data('abc',
-                   {'def': starast.Save('123', '456', '789', {}, eg_loops)})
-y1 = from_ast(eg1)
-# print from_ast(eg1)
-y2 = staryst.Data('abc',
-             {'def': staryst.Save('456', '789', {},
-                                  {'Spin_system': staryst.Loop(['ID'], ['b', 'c', 'Tag_row_ID'], 
-                                                               {('1',): ['2', '3', '?'], 
-                                                                ('2',): ['20', '45', '.'],
-                                                                ('3',): ['19', '28', '.'],
-                                                                ('4',): ['77', '7', '?']})})})
+def example():
+    y0 = staryst.Data('abc',
+                      {'def': staryst.Save('456', '789', {},
+                                           {'Spin_system': staryst.Loop(['ID'], 
+                                                                        ['b', 'c', 'Tag_row_ID'], {})})})
+    eg_loops = [
+        starast.Loop('Spin_system', ['ID', 'b', 'c', 'Tag_row_ID'],
+                     [['1', '2', '3', '.'], ['2', '20', '44', '.'], ['3', '18', '27', '.']])
+    ]
+    eg1 = starast.Data('abc',
+                       {'def': starast.Save('123', '456', '789', {}, eg_loops)})
+    y1 = from_ast(eg1)
+    y2 = staryst.Data('abc',
+                 {'def': staryst.Save('456', '789', {},
+                                      {'Spin_system': staryst.Loop(['ID'], ['b', 'c', 'Tag_row_ID'], 
+                                                                   {('1',): ['2', '3', '?'], 
+                                                                    ('2',): ['20', '45', '.'],
+                                                                    ('3',): ['19', '28', '.'],
+                                                                    ('4',): ['77', '7', '?']})})})
 
-#print diff_data(y0, y2, 3)
-#out = diff_many([y0, y1, y2])
-out = annotations([y0, y1, y2])
-#import json
-#print json.dumps(out, indent=2), '\n\n'
-# print out
-print starcst.dump(y0.to_cst())
+    out = annotations([y0, y1, y2])
+    print starcst.dump(y0.to_cst()) # same as `out.to_cst()`?
 
+# example()
