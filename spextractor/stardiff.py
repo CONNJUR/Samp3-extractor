@@ -1,73 +1,12 @@
 from . import dump2star
 from . import staryst
-from . import starast
 from . import starcst
 
-
-loop_keys = {
-    # Peaks save frame
-    'Peak'                      : ['ID']                        ,
-    'Peak_char'                 : ['Peak_ID', 'Spectral_dim_ID'],   # frequency
-    'Peak_general_char'         : ['Peak_ID']                   ,   # height
-    'Assigned_peak_chem_shift'  : ['Peak_ID', 'Spectral_dim_ID'],
-    # Resonances save frame
-    'Resonance'                 : ['ID']                        ,
-    #'Resonance_assignment'     : ['???']                       ,
-    'Spin_system'               : ['ID']                        ,
-    'Spin_system_link'          : ['From_spin_system', 'To_spin_system'],
-    'Spectral_dim': ['ID']
-    # TODO what about GSS typing and GSS-residue?
-}
 
 loops_yes = set([
     'Peak', 'Peak_char', 'Peak_general_char', 'Assigned_peak_chem_shift',
     'Resonance', 'Spin_system', 'Spin_system_link'])
 loops_no = set(['Spectral_dim'])
-
-
-def build_loop(aloop):
-    pre = aloop.prefix
-    keys = loop_keys[pre]
-    n = len(keys)
-    if keys != aloop.keys[:n]:
-        raise ValueError('expected key columns at beginning of Loop keys -- %s, %s' % (pre, aloop.keys))
-    restcols = aloop.keys[n:]
-    rows = {}
-    for r in aloop.rows:
-        pk, rest = tuple(r[:n]), r[n:]
-        if pk in rows:
-            raise ValueError('duplicate pk in Loop %s -- %s' % (pre, pk))
-        rows[pk] = rest
-    return staryst.Loop(keys, restcols, rows)
-
-
-def build_save(asave):
-    loops = {}
-    for l in asave.loops:
-        if l.prefix in loops:
-            raise ValueError('duplicate loop prefix -- %s' % l.prefix)
-        loops[l.prefix] = build_loop(l)
-    return staryst.Save(asave.category, asave.prefix, asave.datums, loops)    
-
-
-def build_data(adata):
-    saves = dict([(name, build_save(asave)) for (name, asave) in adata.saves.items()])
-    return staryst.Data(adata.name, saves)
-
-
-def from_ast(adata):
-    """
-    convert a STAR AST to an NMRSTAR AST -- implemented in the staryst module
-    """
-    return build_data(adata)
-
-
-"""
-1. compare two NMR-Star ASTs, and find the differences in the loop tables
- - new rows
- - changed rows -- although not knowing the PKs of each loop table,
-   this may end up being deleted + added rows
-"""
 
 
 def diff_loop(l1, l2, diff_counter, ignore_keys=['Tag_row_ID']):
@@ -251,25 +190,14 @@ def run(high=4):
         with open(path, 'r') as my_file:
             data = json.loads(my_file.read())
             extracted_saves = dump2star.extract_spectra(data)
-            data_block = starast.Data('888888', extracted_saves)
-            yst = from_ast(data_block)
-            datas.append(yst)
+            data_block = staryst.Data('888888', extracted_saves)
+            datas.append(data_block)
 
     done = annotations(datas)
     add_boilerplate(done)
     with open('my_final', 'w') as out:
         out.write(starcst.dump(done.to_cst()))
     return done
-#    for d in datas:
-#        print d, '\n\n\n'
-#    (_, changes, new) = diff_many(datas, 1, 1)
-#    first = datas[0]
-#    with open('my_final', 'w') as out:
-#        out.write(starcst.dump(first.to_cst()))
-#    for c in changes:
-#        print c
-#    for n in new:
-#        print n
 
 
 out = run()
@@ -281,12 +209,11 @@ def example():
                                            {'Spin_system': staryst.Loop(['ID'], 
                                                                         ['b', 'c', 'Tag_row_ID'], {})})})
     eg_loops = [
-        starast.Loop('Spin_system', ['ID', 'b', 'c', 'Tag_row_ID'],
+        staryst.Loop('Spin_system', ['ID', 'b', 'c', 'Tag_row_ID'],
                      [['1', '2', '3', '.'], ['2', '20', '44', '.'], ['3', '18', '27', '.']])
     ]
-    eg1 = starast.Data('abc',
-                       {'def': starast.Save('123', '456', '789', {}, eg_loops)})
-    y1 = from_ast(eg1)
+    y1 = staryst.Data('abc',
+                      {'def': staryst.Save('123', '456', '789', {}, eg_loops)})
     y2 = staryst.Data('abc',
                  {'def': staryst.Save('456', '789', {},
                                       {'Spin_system': staryst.Loop(['ID'], ['b', 'c', 'Tag_row_ID'], 

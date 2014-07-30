@@ -1,32 +1,43 @@
-from . import starast
-from . import starcst
+from .staryst import Loop, Save, Data
+
+
+loop_keys = {
+    # Peaks save frame
+    'Peak'                      : ['ID']                        ,
+    'Peak_char'                 : ['Peak_ID', 'Spectral_dim_ID'],   # frequency
+    'Peak_general_char'         : ['Peak_ID']                   ,   # height
+    'Assigned_peak_chem_shift'  : ['Peak_ID', 'Spectral_dim_ID'],
+    # Resonances save frame
+    'Resonance'                 : ['ID']                        ,
+    #'Resonance_assignment'     : ['???']                       ,
+    'Spin_system'               : ['ID']                        ,
+    'Spin_system_link'          : ['From_spin_system', 'To_spin_system'],
+    'Spectral_dim': ['ID']
+    # TODO what about GSS typing and GSS-residue?
+}
+NULL = '.'
 
 
 def extract_peaks(peaks):
-    peak_keys = ['ID', 'Type', 'Tag_row_ID']
-    height_keys = [
-        'Peak_ID', 'Intensity_val', 'Intensity_val_err', 
-        'Measurement_method', 'Tag_row_ID']
-    freq_keys = ['Peak_ID', 'Spectral_dim_ID', 'Chem_shift_val', 'Tag_row_ID']
-    peak_rows = []
-    freq_rows = []
-    height_rows = []
-    NULL = '.'
+    loop_peaks = Loop(['ID'], ['Type', 'Tag_row_ID'], {})
+    freqs = Loop(['Peak_ID', 'Spectral_dim_ID'], ['Chem_shift_val', 'Tag_row_ID'], {})
+    heights = Loop(['Peak_ID'],
+                   ['Intensity_val', 'Intensity_val_err', 'Measurement_method', 'Tag_row_ID'],
+                   {})
     for pk in peaks:
         pkid = str(pk['id'])
         pktype = 'signal' if pk['note'] == '' else pk['note']
-        peak_rows.append([pkid, pktype, NULL])
-        height_rows.append([
-            pkid, str(pk['height']['closest']), '0', 'height', NULL])
+        loop_peaks.add_row([pkid], [pktype, NULL])
+        heights.add_row([pkid], [str(pk['height']['closest']), '0', 'height', NULL])
         for (ix, d) in enumerate(pk['position'], start=1):
-            freq_rows.append([pkid, str(ix), str(d), NULL])
-    return [
+            freqs.add_row([pkid, str(ix)], [str(d), NULL])
+    return {
         # in order to do peakdim-resonance assignments,
         # need a dict of Sparky-resonance-names to NMRStar-resonance-names
-        starast.Loop('Peak', peak_keys, peak_rows),
-        starast.Loop('Peak_char', freq_keys, freq_rows),
-        starast.Loop('Peak_general_char', height_keys, height_rows)
-    ]
+        'Peak'              : loop_peaks,
+        'Peak_char'         : freqs,
+        'Peak_general_char' : heights
+    }
 
 
 def _trans(nucleus):
@@ -35,15 +46,14 @@ def _trans(nucleus):
 
 
 def extract_spectral_dimensions(nuclei):
-    dim_keys = ['ID', 'Atom_isotope_number', 'Atom_type']
-    dim_rows = []
+    dims = Loop(['ID'], ['Atom_isotope_number', 'Atom_type'], {})
     for (ix, n) in enumerate(nuclei, start=1):
         iso, ntype = _trans(n)
-        dim_rows.append([str(ix), iso, ntype])
-    return starast.Loop('Spectral_dim', dim_keys, dim_rows)
+        dims.add_row([str(ix)], [iso, ntype])
+    return dims
 
 
-def extract_spectrum(spec_id, framecode, name, sp):
+def extract_spectrum(spec_id, name, sp):
     datums = {
         'Experiment_name'               : name,
         'ID'                            : str(spec_id),
@@ -52,8 +62,8 @@ def extract_spectrum(spec_id, framecode, name, sp):
         'Sample_ID'                     : '?'
     }
     loops = extract_peaks(sp['peaks'])
-    loops.append(extract_spectral_dimensions(sp['nuclei']))
-    return starast.Save(framecode, 'spectral_peak_list', 'Spectral_peak_list', datums, loops)
+    loops['Spectral_dim'] = extract_spectral_dimensions(sp['nuclei'])
+    return Save('spectral_peak_list', 'Spectral_peak_list', datums, loops)
 
 
 def extract_spectra(data):
@@ -63,7 +73,7 @@ def extract_spectra(data):
     saves = {}
     for (ix, (name, sp)) in enumerate(data['spectra'].items()):
         code = name + '_peaklist'
-        saves[code] = extract_spectrum(str(ix + 1), code, name, sp)
+        saves[code] = extract_spectrum(str(ix + 1), name, sp)
     return saves
 
 
@@ -72,6 +82,7 @@ def generate_nmrstar(high=6):
     create NMR-Star files from each of the JSON files,
     assuming systematic names for the files
     """
+    from . import starcst
     import json
     for ix in range(1, high + 1):
         path = 'json_' + str(ix) + '.txt'
@@ -79,8 +90,8 @@ def generate_nmrstar(high=6):
             with open('star_' + str(ix) + '.txt', 'w') as out:
                 data = json.loads(my_file.read())
                 extracted = extract_spectra(data)
-                data_block = starast.Data('99999999', extracted)
-                out.write(starcst.dump(data_block.translate()))
+                data_block = Data('99999999', extracted)
+                out.write(starcst.dump(data_block.to_cst()))
 
 
 if __name__ == "__main__":
