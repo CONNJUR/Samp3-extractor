@@ -1,4 +1,4 @@
-from .staryst import Loop, Save, Data
+from .starast import Loop, Save, Data
 
 
 loop_keys = {
