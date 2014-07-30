@@ -179,18 +179,16 @@ def annotations(ds):
     diff = diff_many(ds, tag_counter=second_tag_id)
     first = ds[0]
     tags = staryst.Loop(['ID'], 
-                        ['Previous_tag_ID', 'Author', 'Entry_ID', 'Annotation_list_ID', 'Detail'],
+                        ['Previous_tag_ID', 'Author', 'Detail'],
                         {})
     tag_rows = staryst.Loop(['ID'], 
-                            ['Previous_tag_row_ID', 'Tag_ID', 'Entry_ID', 'Annotation_list_ID'],
+                            ['Previous_tag_row_ID', 'Tag_ID'],
                             {})
     tag_diffs = staryst.Loop(['ID'],
-                             ['Tag_row_ID', 'Entry_ID', 'Annotation_list_ID', 'Column_name', 'Previous_value'],
+                             ['Tag_row_ID', 'Column_name', 'Previous_value'],
                              {})
-    sf_id= '1'
     datums = {
-        'Entry_ID': '888888',
-        'ID': sf_id
+        'ID': '1'
     }
     loops = {
         'Tag'       : tags      ,
@@ -198,23 +196,47 @@ def annotations(ds):
         'Tag_diff'  : tag_diffs
     }
     first.saves['my_annotations'] = staryst.Save('annotations', 'Annotation_list', datums, loops)
-    tags.add_row([str(second_tag_id - 1)], ['.', '.', '888888', sf_id, '.'])
+    tags.add_row([str(second_tag_id - 1)], ['.', '.', '.'])
     tag_diff_id = 1
     for (tag_id, chs) in sorted(diff['changes'].items(), key=lambda x: int(x[0])):
         tag = str(tag_id)
-        tags.add_row([tag], [str(tag_id - 1), '.', '888888', sf_id, '.'])
+        tags.add_row([tag], [str(tag_id - 1), '.', '.'])
         for c in chs['changes']:
             old, new = c['old_row_id'], c['new_row_id']
-            tag_rows.add_row([new], [old, tag, '888888', sf_id])
+            tag_rows.add_row([new], [old, tag])
             for d in c['diff']:
                 tag_diffs.add_row([str(tag_diff_id)], 
-                                  [new, '888888', sf_id, d['column'], d['old_value']])
+                                  [new, d['column'], d['old_value']])
                 tag_diff_id += 1
         for n in chs['new']:
-            tag_rows.add_row([str(n)], ['.', tag, '888888', sf_id])
-            tag_diffs.add_row([str(tag_diff_id)], [str(n), '888888', sf_id, '.', '.'])
+            tag_rows.add_row([str(n)], ['.', tag])
+            tag_diffs.add_row([str(tag_diff_id)], [str(n), '.', '.'])
             tag_diff_id += 1
     return first
+
+
+def add_boilerplate(yst_data):
+    """
+     1. add Entry_ID key to each saveframe
+     2. add Entry_ID key to each loop, modifying each row
+     3. for each save frame, take the `<prefix>.ID` key/val,
+        and add a `<prefix>_ID` key to each contained loop with the same val
+     
+     this modifies the incoming data
+    """
+    entry_id = yst_data.name
+    # 1.
+    for (s_name, save) in yst_data.saves.items():
+        if 'Entry_ID' in save.datums:
+            raise ValueError('found Entry_ID already in save frame -- %s' % s_name)
+        save.datums['Entry_ID'] = entry_id
+        s_id = save.datums['ID']
+        pre = save.prefix
+        id_key = pre + '_ID'
+        # 2. and 3.
+        for (_, loop) in save.loops.items():
+            loop.add_column('Entry_ID', init_value=entry_id)
+            loop.add_column(id_key, init_value=s_id)
 
 
 def run(high=4):
@@ -228,12 +250,13 @@ def run(high=4):
     for path in paths:
         with open(path, 'r') as my_file:
             data = json.loads(my_file.read())
-            extracted_saves = dump2star.extract_spectra('888888', data)
+            extracted_saves = dump2star.extract_spectra(data)
             data_block = starast.Data('888888', extracted_saves)
             yst = from_ast(data_block)
             datas.append(yst)
 
     done = annotations(datas)
+    add_boilerplate(done)
     with open('my_final', 'w') as out:
         out.write(starcst.dump(done.to_cst()))
     return done
