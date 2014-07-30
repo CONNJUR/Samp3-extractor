@@ -25,6 +25,24 @@ class StarBase(object):
 
 
 
+class UQValue(StarBase):
+    
+    def __init__(self, value):
+        specials = set('\n\r \t"#\'_')
+        spaces = set('\n\r \t')
+        # yes, there must be at least one character
+        if value[0] in specials:
+            raise ValueError("unquoted value can't start with special character")
+        for c in value[1:]:
+            if c in spaces:
+                raise ValueError("unquoted value can't contain whitespace")
+        self.value = value
+    
+    def toJSONObject(self):
+        return {'type': 'UQValue', 'value': self.value}
+
+
+
 class DQValue(StarBase):
 
     def __init__(self, value):
@@ -126,6 +144,8 @@ def dump_value(value):
         return '"' + value.value + '"'
     elif isinstance(value, SCValue):
         return '\n;' + value.value + ';\n'
+    elif isinstance(value, UQValue):
+        return value.value
     else:
         raise ValueError("invalid NMR-Star value -- %s (%s)" % (repr(value), repr(type(value))))
 
