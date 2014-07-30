@@ -1,4 +1,5 @@
 from . import starast
+from . import starcst
 
 
 def extract_peaks(entry_id, spectrum_id, peaks):
@@ -70,3 +71,22 @@ def extract_spectra(entry_id, data):
         saves[code] = extract_spectrum(str(ix + 1), entry_id, code, name, sp)
     return saves
 
+
+def generate_nmrstar(high=6):
+    """
+    create NMR-Star files from each of the JSON files,
+    assuming systematic names for the files
+    """
+    import json
+    for ix in range(1, high + 1):
+        path = 'json_' + str(ix) + '.txt'
+        with open(path, 'r') as my_file:
+            with open('star_' + str(ix) + '.txt', 'w') as out:
+                data = json.loads(my_file.read())
+                extracted = extract_spectra('99999999', data)
+                data_block = starast.Data('mydata', extracted)
+                out.write(starcst.dump(data_block.translate()))
+
+
+if __name__ == "__main__":
+    generate_nmrstar()

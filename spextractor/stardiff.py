@@ -217,13 +217,13 @@ def annotations(ds):
     return first
 
 
-def run():
+def run(high=4):
     """
     create NMR-Star files from each of the JSON files
     """
     import json
     datas = []
-    paths = ['a' + str(ix) + '.txt' for ix in range(1,5)]
+    paths = ['json_' + str(ix) + '.txt' for ix in range(1, high + 1)]
 
     for path in paths:
         with open(path, 'r') as my_file:
