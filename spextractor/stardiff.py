@@ -1,5 +1,5 @@
 from . import dump2star
-from . import staryst
+from .starast import Loop, Save, Data
 from . import starcst
 
 
@@ -117,15 +117,15 @@ def annotations(ds):
     second_tag_id = 1
     diff = diff_many(ds, tag_counter=second_tag_id)
     first = ds[0]
-    tags = staryst.Loop(['ID'], 
-                        ['Previous_tag_ID', 'Author', 'Detail'],
-                        {})
-    tag_rows = staryst.Loop(['ID'], 
-                            ['Previous_tag_row_ID', 'Tag_ID'],
-                            {})
-    tag_diffs = staryst.Loop(['ID'],
-                             ['Tag_row_ID', 'Column_name', 'Previous_value'],
-                             {})
+    tags = Loop(['ID'], 
+                ['Previous_tag_ID', 'Author', 'Detail'],
+                {})
+    tag_rows = Loop(['ID'], 
+                    ['Previous_tag_row_ID', 'Tag_ID'],
+                    {})
+    tag_diffs = Loop(['ID'],
+                     ['Tag_row_ID', 'Column_name', 'Previous_value'],
+                     {})
     datums = {
         'ID': '1'
     }
@@ -134,7 +134,7 @@ def annotations(ds):
         'Tag_row'   : tag_rows  ,
         'Tag_diff'  : tag_diffs
     }
-    first.saves['my_annotations'] = staryst.Save('annotations', 'Annotation_list', datums, loops)
+    first.saves['my_annotations'] = Save('annotations', 'Annotation_list', datums, loops)
     tags.add_row([str(second_tag_id - 1)], ['.', '.', '.'])
     tag_diff_id = 1
     for (tag_id, chs) in sorted(diff['changes'].items(), key=lambda x: int(x[0])):
@@ -190,7 +190,7 @@ def run(high=4):
         with open(path, 'r') as my_file:
             data = json.loads(my_file.read())
             extracted_saves = dump2star.extract_spectra(data)
-            data_block = staryst.Data('888888', extracted_saves)
+            data_block = Data('888888', extracted_saves)
             datas.append(data_block)
 
     done = annotations(datas)
@@ -204,23 +204,23 @@ out = run()
 
 
 def example():
-    y0 = staryst.Data('abc',
-                      {'def': staryst.Save('456', '789', {},
-                                           {'Spin_system': staryst.Loop(['ID'], 
-                                                                        ['b', 'c', 'Tag_row_ID'], {})})})
+    y0 = Data('abc',
+              {'def': Save('456', '789', {},
+                           {'Spin_system': Loop(['ID'], 
+                                                ['b', 'c', 'Tag_row_ID'], {})})})
     eg_loops = [
-        staryst.Loop('Spin_system', ['ID', 'b', 'c', 'Tag_row_ID'],
-                     [['1', '2', '3', '.'], ['2', '20', '44', '.'], ['3', '18', '27', '.']])
+        Loop('Spin_system', ['ID', 'b', 'c', 'Tag_row_ID'],
+             [['1', '2', '3', '.'], ['2', '20', '44', '.'], ['3', '18', '27', '.']])
     ]
-    y1 = staryst.Data('abc',
-                      {'def': staryst.Save('123', '456', '789', {}, eg_loops)})
-    y2 = staryst.Data('abc',
-                 {'def': staryst.Save('456', '789', {},
-                                      {'Spin_system': staryst.Loop(['ID'], ['b', 'c', 'Tag_row_ID'], 
-                                                                   {('1',): ['2', '3', '?'], 
-                                                                    ('2',): ['20', '45', '.'],
-                                                                    ('3',): ['19', '28', '.'],
-                                                                    ('4',): ['77', '7', '?']})})})
+    y1 = Data('abc',
+              {'def': Save('123', '456', '789', {}, eg_loops)})
+    y2 = Data('abc',
+              {'def': Save('456', '789', {},
+                           {'Spin_system': Loop(['ID'], ['b', 'c', 'Tag_row_ID'], 
+                                                {('1',): ['2', '3', '?'], 
+                                                ('2',): ['20', '45', '.'],
+                                                ('3',): ['19', '28', '.'],
+                                                ('4',): ['77', '7', '?']})})})
 
     out = annotations([y0, y1, y2])
     print starcst.dump(y0.to_cst()) # same as `out.to_cst()`?
