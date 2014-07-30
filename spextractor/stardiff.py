@@ -189,7 +189,7 @@ def run(high=4):
     for path in paths:
         with open(path, 'r') as my_file:
             data = json.loads(my_file.read())
-            extracted_saves = dump2star.extract_spectra(data)
+            extracted_saves = dump2star.extract_spectra(data['spectra'])
             data_block = Data('888888', extracted_saves)
             datas.append(data_block)
 
