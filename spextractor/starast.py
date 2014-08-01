@@ -12,8 +12,8 @@ class Loop(StarBase):
     def __init__(self, keycols, restcols, rows):
         if len(set(keycols + restcols)) != len(keycols) + len(restcols):
             raise ValueError('duplicate column in Loop')
-        self.keycols = keycols
-        self.restcols = restcols
+        self.keycols = list(keycols) # copy for safety
+        self.restcols = list(restcols) # copy for safety
         self.rows = {}
         num_keys = len(keycols)
         for (k, v) in rows.items():
@@ -31,7 +31,7 @@ class Loop(StarBase):
         pk = tuple(keyvals)
         if pk in self.rows:
             raise ValueError("can't have duplicate key values -- %s" % str(keyvals))
-        self.rows[pk] = list(restvals) # make a copy
+        self.rows[pk] = list(restvals) # make a copy for safety
     
     def update_row(self, keyvals, restvals):
         """
@@ -83,8 +83,9 @@ class Loop(StarBase):
     def add_column(self, name, init_value='.'):
         """
         """
-        if name in (self.keycols + self.restcols):
-            raise ValueError('duplicate column name -- %s' % name)
+        keys = self.keycols + self.restcols
+        if name in keys:
+            raise ValueError('duplicate column name -- %s in %s' % (name, keys))
         self.restcols.append(name)
         for (k, v) in self.rows.items():
             v.append(init_value)

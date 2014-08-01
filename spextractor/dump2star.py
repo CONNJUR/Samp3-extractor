@@ -122,7 +122,9 @@ def extract_assignments(groups):
                 res_assn.add_row([ix, NULL, NULL, res['atomtype']], [NULL])
             rids[(gid, rid)] = ix
             index += 1
-    datums = {}
+    datums = {
+        'ID': '1'
+    }
     loops = {
         'Resonance'             : resons,
         'Resonance_assignment'  : res_assn,
