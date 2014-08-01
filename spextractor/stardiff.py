@@ -5,7 +5,7 @@ from . import starcst
 
 loops_yes = set([
     'Peak', 'Peak_char', 'Peak_general_char', 'Assigned_peak_chem_shift',
-    'Resonance', 'Spin_system', 'Spin_system_link'])
+    'Resonance', 'Spin_system', 'Spin_system_link', 'Resonance_assignment'])
 loops_no = set(['Spectral_dim'])
 
 
@@ -87,8 +87,10 @@ def diff_data(d1, d2, diff_counter):
         if name not in d1.saves or name not in d2.saves:
             raise ValueError('save name %s missing from data block' % name)
         diff_counter, save_changes, save_new = diff_save(d1.saves[name], d2.saves[name], diff_counter)
+        for s in save_changes:
+            s['sf_name'] = name
         changes.extend(save_changes)
-        new.extend(save_new)
+        new.extend([{'row_id': sn, 'sf_name': name} for sn in save_new])
     return (diff_counter, changes, new)
 
 
@@ -121,7 +123,7 @@ def annotations(ds):
                 ['Previous_tag_ID', 'Author', 'Detail'],
                 {})
     tag_rows = Loop(['ID'], 
-                    ['Previous_tag_row_ID', 'Tag_ID'],
+                    ['Previous_tag_row_ID', 'Tag_ID', 'Link_sf_framecode'],
                     {})
     tag_diffs = Loop(['ID'],
                      ['Tag_row_ID', 'Column_name', 'Previous_value'],
@@ -141,15 +143,17 @@ def annotations(ds):
         tag = str(tag_id)
         tags.add_row([tag], [str(tag_id - 1), '.', '.'])
         for c in chs['changes']:
-            old, new = c['old_row_id'], c['new_row_id']
-            tag_rows.add_row([new], [old, tag])
+            old, new, sf_name = c['old_row_id'], c['new_row_id'], c['sf_name']
+            tag_rows.add_row([new], [old, tag, sf_name])
             for d in c['diff']:
                 tag_diffs.add_row([str(tag_diff_id)], 
                                   [new, d['column'], d['old_value']])
                 tag_diff_id += 1
         for n in chs['new']:
-            tag_rows.add_row([str(n)], ['.', tag])
-            tag_diffs.add_row([str(tag_diff_id)], [str(n), '.', '.'])
+            row_id = str(n['row_id'])
+            sf_name = n['sf_name']
+            tag_rows.add_row([row_id], ['.', tag, sf_name])
+            tag_diffs.add_row([str(tag_diff_id)], [row_id, '.', '.'])
             tag_diff_id += 1
     return first
 
@@ -178,20 +182,18 @@ def add_boilerplate(yst_data):
             loop.add_column(id_key, init_value=s_id)
 
 
-def run(high=4):
+def run(high):
     """
     create NMR-Star files from each of the JSON files
     """
     import json
     datas = []
-    paths = ['json_' + str(ix) + '.txt' for ix in range(1, high + 1)]
+    paths = ['a_' + str(ix) + '.txt' for ix in range(1, high + 1)]
 
     for path in paths:
         with open(path, 'r') as my_file:
-            data = json.loads(my_file.read())
-            extracted_saves = dump2star.extract_spectra(data['spectra'])
-            data_block = Data('888888', extracted_saves)
-            datas.append(data_block)
+            json_data = json.loads(my_file.read())
+            datas.append(dump2star.extract(json_data, '888888'))
 
     done = annotations(datas)
     add_boilerplate(done)
@@ -200,7 +202,7 @@ def run(high=4):
     return done
 
 
-out = run()
+out = run(35)
 
 
 def example():
