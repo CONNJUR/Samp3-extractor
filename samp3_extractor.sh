@@ -1,8 +1,10 @@
-myids=( $(git rev-list --objects master -- sparky_data.json | grep sparky_data | perl -e 'for (<>) { print substr($_, 0, 40) . "\n"; }') )
-
+filepath="sparky_data.json"
+myids=( $(git log --format="%H" $filepath) )
+ 
 for (( i=0,j=1; i < ${#myids[@]}; i++,j++ )) 
     do
         echo $i $j
-        name="a$j.txt"
-        git cat-file -p ${myids[$i]} > $name
+        name="temp/a$j.txt"
+        sha=${myids[$i]}
+        git show $sha:$filepath > $name
     done
