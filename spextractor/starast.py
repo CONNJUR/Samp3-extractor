@@ -15,7 +15,6 @@ class Loop(StarBase):
         self.keycols = list(keycols) # copy for safety
         self.restcols = list(restcols) # copy for safety
         self.rows = {}
-        num_keys = len(keycols)
         for (k, v) in rows.items():
             self.add_row(k, v)
     
