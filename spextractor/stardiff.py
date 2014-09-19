@@ -184,7 +184,7 @@ def add_boilerplate(yst_data):
             loop.add_column(id_key, init_value=s_id)
 
 
-def run(paths, output_path):
+def run(paths):
     """
     create NMR-Star files from each of the JSON files
     """
@@ -197,8 +197,6 @@ def run(paths, output_path):
 
     done = annotations(datas)
     add_boilerplate(done)
-    with open(output_path, 'w') as out:
-        out.write(starcst.dump(done.to_cst()))
     return done
 
 
@@ -235,5 +233,7 @@ if __name__ == "__main__":
     import sys
     dirname, high = sys.argv[1], int(sys.argv[2])
     paths = [get_name(dirname, ix) for ix in range(1, high + 1)]
-    out = run(paths, 'my_final')
+    out = run(paths)
+    print starcst.dump(out.to_cst())
+
 
