@@ -1,6 +1,8 @@
 from . import dump2star
 from .starast import Loop, Save, Data
 from . import starcst
+import json
+
 
 
 loops_yes = set([
@@ -182,13 +184,11 @@ def add_boilerplate(yst_data):
             loop.add_column(id_key, init_value=s_id)
 
 
-def run(high):
+def run(paths, output_path):
     """
     create NMR-Star files from each of the JSON files
     """
-    import json
     datas = []
-    paths = ['a_' + str(ix) + '.txt' for ix in range(1, high + 1)]
 
     for path in paths:
         with open(path, 'r') as my_file:
@@ -197,12 +197,9 @@ def run(high):
 
     done = annotations(datas)
     add_boilerplate(done)
-    with open('my_final', 'w') as out:
+    with open(output_path, 'w') as out:
         out.write(starcst.dump(done.to_cst()))
     return done
-
-
-out = run(35)
 
 
 def example():
@@ -228,3 +225,15 @@ def example():
     print starcst.dump(y0.to_cst()) # same as `out.to_cst()`?
 
 # example()
+
+
+def get_name(dirname, ix):
+    return ''.join([dirname, '/a', str(ix), '.txt'])
+
+
+if __name__ == "__main__":
+    import sys
+    dirname, high = sys.argv[1], int(sys.argv[2])
+    paths = [get_name(dirname, ix) for ix in range(1, high + 1)]
+    out = run(paths, 'my_final')
+
