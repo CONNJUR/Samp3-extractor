@@ -59,9 +59,12 @@ def diff_save(s1, s2, diff_counter):
     # ignore the rest of the datums
     changes, new = [], []
     for pre in set(s1.loops.keys() + s2.loops.keys()):
-        if pre not in s1.loops or pre not in s2.loops:
+        if pre not in s2.loops:
             raise ValueError('loop name %s missing from save frame' % pre)
         if pre in loops_yes:
+            if pre not in s1.loops:
+                old = s2.loops[pre]
+                s1.loops[pre] = Loop(old.keycols, old.restcols, {})
             diff_counter, loop_changes, loop_new = diff_loop(s1.loops[pre], s2.loops[pre], diff_counter)
             changes.extend(loop_changes)
             new.extend(loop_new)
@@ -86,8 +89,15 @@ def diff_data(d1, d2, diff_counter):
     for name in set(d1.saves.keys() + d2.saves.keys()):
         if name == 'my_annotations':
             continue
-        if name not in d1.saves or name not in d2.saves:
+        if name not in d2.saves: # or name not in d2.saves:
+            print d1.saves.keys(), len(str(d1))
+            print d2.saves.keys(), len(str(d2))
+#            print 'oops, missing %s' % name
+#            continue
             raise ValueError('save name %s missing from data block' % name)
+        if name not in d1.saves:
+            old = d2.saves[name]
+            d1.saves[name] = Save(old.category, old.prefix, old.datums, {})
         diff_counter, save_changes, save_new = diff_save(d1.saves[name], d2.saves[name], diff_counter)
         for s in save_changes:
             s['sf_name'] = name
@@ -193,7 +203,7 @@ def run(paths):
     for path in paths:
         with open(path, 'r') as my_file:
             json_data = json.loads(my_file.read())
-            datas.append(dump2star.extract(json_data, '888888'))
+            datas.append(dump2star.extract(json_data, 'NEED_ACC_NUM'))
 
     done = annotations(datas)
     add_boilerplate(done)
@@ -233,6 +243,7 @@ if __name__ == "__main__":
     import sys
     dirname, high = sys.argv[1], int(sys.argv[2])
     paths = [get_name(dirname, ix) for ix in range(1, high + 1)]
+    paths.reverse()
     out = run(paths)
     print starcst.dump(out.to_cst())
 
